@@ -144,8 +144,8 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
     rec.lang = "en-US";
     rec.interimResults = false;
     rec.onresult = (e) => {
-      const said = Array.from(e.results as ArrayLike<any>)
-        .map((r) => r[0].transcript)
+      const said = Array.from(e.results)
+        .map((r) => r[0]?.transcript ?? "")
         .join(" ")
         .trim();
       if (said) sendMessage({ text: said });
