@@ -2,7 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
-import { Mic, MessageSquareText, ArrowLeft, X, Volume2, Bookmark, BookmarkCheck, Maximize2 } from "lucide-react";
+import {
+  Mic,
+  MessageSquareText,
+  ArrowLeft,
+  X,
+  Volume2,
+  Bookmark,
+  BookmarkCheck,
+  Maximize2,
+} from "lucide-react";
+import { PictoViewer } from "@/components/PictoViewer";
 import { speak, PICTOS, useSavedPhrases, type Picto } from "@/lib/talki";
 import isoAsset from "@/assets/talki-isotype.png.asset.json";
 import {
@@ -175,230 +185,193 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
 
   return (
     <>
-    {viewing && (
-      <PictoViewer
-        pictos={viewing.pictos}
-        saved={savedIds.includes(viewing.id)}
-        onSave={() => savePictos(viewing.id, viewing.pictos)}
-        onClose={() => setViewing(null)}
-      />
-    )}
-    <div className="mx-auto flex h-[calc(100dvh-8.5rem)] max-w-3xl flex-col px-4 md:h-screen md:py-6">
-      <div className="flex items-center gap-3 py-4">
-        <button
-          onClick={onBack}
-          aria-label="Back"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted text-brand-deep"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <img src={isoAsset.url} alt="" width={436} height={400} className="h-11 w-auto shrink-0" />
-        <div className="min-w-0">
-          <h1 className="truncate text-2xl text-brand-deep">Talki Chat</h1>
-          <p className="text-sm text-muted-foreground">Tips for parents & educators</p>
+      {viewing && (
+        <PictoViewer
+          pictos={viewing.pictos}
+          saved={savedIds.includes(viewing.id)}
+          onSave={() => savePictos(viewing.id, viewing.pictos)}
+          onClose={() => setViewing(null)}
+        />
+      )}
+      <div className="mx-auto flex h-[calc(100dvh-8.5rem)] max-w-3xl flex-col px-4 md:h-screen md:py-6">
+        <div className="flex items-center gap-3 py-4">
+          <button
+            onClick={onBack}
+            aria-label="Back"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted text-brand-deep"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <img
+            src={isoAsset.url}
+            alt=""
+            width={436}
+            height={400}
+            className="h-11 w-auto shrink-0"
+          />
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl text-brand-deep">Talki Chat</h1>
+            <p className="text-sm text-muted-foreground">Tips for parents & educators</p>
+          </div>
         </div>
-      </div>
 
-      {(
-      <Conversation className="flex-1 rounded-3xl">
-        <ConversationContent>
-          {pictoMsgs.map((pm) => (
-              <div key={pm.id} className="space-y-2">
-                <p className="ml-auto w-fit max-w-[85%] rounded-2xl bg-brand-blue px-4 py-2 text-on-brand">
-                  {pm.text}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {pm.pictos.map((pc, i) => (
+        {
+          <Conversation className="flex-1 rounded-3xl">
+            <ConversationContent>
+              {pictoMsgs.map((pm) => (
+                <div key={pm.id} className="space-y-2">
+                  <p className="ml-auto w-fit max-w-[85%] rounded-2xl bg-brand-blue px-4 py-2 text-on-brand">
+                    {pm.text}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {pm.pictos.map((pc, i) => (
+                      <button
+                        key={i}
+                        onClick={() => speak(pc.label)}
+                        className="flex w-20 flex-col items-center rounded-2xl border-2 border-brand-yellow bg-card p-2 shadow-sm"
+                      >
+                        <span className="text-4xl">{pc.emoji}</span>
+                        <span className="mt-1 text-xs font-semibold text-brand-deep">
+                          {pc.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
                     <button
-                      key={i}
-                      onClick={() => speak(pc.label)}
-                      className="flex w-20 flex-col items-center rounded-2xl border-2 border-brand-yellow bg-card p-2 shadow-sm"
+                      onClick={() => setViewing({ id: pm.id, pictos: pm.pictos })}
+                      className="flex items-center gap-1.5 rounded-full bg-brand-blue px-4 py-2 text-sm font-semibold text-on-brand"
                     >
-                      <span className="text-4xl">{pc.emoji}</span>
-                      <span className="mt-1 text-xs font-semibold text-brand-deep">{pc.label}</span>
+                      <Maximize2 className="h-4 w-4" /> See
                     </button>
-                  ))}
+                    <button
+                      onClick={() => savePictos(pm.id, pm.pictos)}
+                      className="flex items-center gap-1.5 rounded-full bg-brand-green px-4 py-2 text-sm font-semibold text-on-brand"
+                    >
+                      {savedIds.includes(pm.id) ? (
+                        <BookmarkCheck className="h-4 w-4" />
+                      ) : (
+                        <Bookmark className="h-4 w-4" />
+                      )}
+                      {savedIds.includes(pm.id) ? "Saved" : "Save"}
+                    </button>
+                  </div>
                 </div>
+              ))}
+              {mode === "text" &&
+                messages.map((m) => (
+                  <Message key={m.id} from={m.role}>
+                    <MessageContent
+                      className={
+                        m.role === "user"
+                          ? "group-[.is-user]:bg-brand-blue group-[.is-user]:text-on-brand rounded-2xl"
+                          : ""
+                      }
+                    >
+                      {m.parts.map((p, i) =>
+                        p.type === "text" ? (
+                          m.role === "assistant" ? (
+                            <MessageResponse key={i}>{p.text}</MessageResponse>
+                          ) : (
+                            <span key={i}>{p.text}</span>
+                          )
+                        ) : null,
+                      )}
+                    </MessageContent>
+                  </Message>
+                ))}
+              {status === "submitted" && <Shimmer>Talki is thinking...</Shimmer>}
+              {error && (
+                <p className="rounded-2xl bg-destructive/10 p-3 text-sm text-destructive">
+                  {error.message || "Something went wrong. Please try again."}
+                </p>
+              )}
+            </ConversationContent>
+            <ConversationScrollButton />
+          </Conversation>
+        }
+
+        {mode === "voice" ? (
+          <>
+            {error && (
+              <p className="rounded-2xl bg-destructive/10 p-3 text-sm text-destructive">
+                {error.message || "Something went wrong. Please try again."}
+              </p>
+            )}
+            <div className="flex flex-col items-center gap-3 py-4">
+              <button
+                onClick={toggleMic}
+                disabled={busy}
+                aria-label={listening ? "Stop recording" : "Start speaking"}
+                aria-busy={listening}
+                className="relative grid h-20 w-20 place-items-center rounded-full bg-brand-coral text-on-brand shadow-pop transition active:translate-y-1 disabled:cursor-not-allowed"
+              >
+                {listening ? (
+                  <>
+                    <span className="absolute inset-0 animate-ping rounded-full bg-brand-coral/60" />
+                    <span className="relative flex h-9 items-center gap-1">
+                      {[0, 150, 300, 450].map((d) => (
+                        <span
+                          key={d}
+                          className="h-full w-1.5 animate-pulse rounded-full bg-on-brand"
+                          style={{ animationDelay: `${d}ms`, height: d % 300 ? "60%" : "100%" }}
+                        />
+                      ))}
+                    </span>
+                  </>
+                ) : (
+                  <Mic className="h-9 w-9" />
+                )}
+              </button>
+              <p className="text-sm font-semibold text-muted-foreground">
+                {listening
+                  ? "Listening… tap to stop"
+                  : busy
+                    ? "Talki is answering…"
+                    : "Tap and speak"}
+              </p>
+              <div className="w-full">
+                <label
+                  htmlFor="voice-text"
+                  className="mb-1 block text-sm font-semibold text-brand-deep"
+                >
+                  Text (double check)
+                </label>
                 <div className="flex gap-2">
+                  <textarea
+                    id="voice-text"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    rows={2}
+                    placeholder="Your words will appear here…"
+                    className="flex-1 resize-none rounded-2xl border-2 border-brand-blue/30 bg-card px-3 py-2 text-brand-deep outline-none focus:border-brand-blue"
+                  />
                   <button
-                    onClick={() => setViewing({ id: pm.id, pictos: pm.pictos })}
-                    className="flex items-center gap-1.5 rounded-full bg-brand-blue px-4 py-2 text-sm font-semibold text-on-brand"
+                    onClick={sendPictos}
+                    disabled={busy || listening || !text.trim()}
+                    className="rounded-2xl bg-brand-blue px-4 font-semibold text-on-brand disabled:opacity-50"
                   >
-                    <Maximize2 className="h-4 w-4" /> See
-                  </button>
-                  <button
-                    onClick={() => savePictos(pm.id, pm.pictos)}
-                    className="flex items-center gap-1.5 rounded-full bg-brand-green px-4 py-2 text-sm font-semibold text-on-brand"
-                  >
-                    {savedIds.includes(pm.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
-                    {savedIds.includes(pm.id) ? "Saved" : "Save"}
+                    Send
                   </button>
                 </div>
               </div>
-            ))}
-          {mode === "text" && messages.map((m) => (
-            <Message key={m.id} from={m.role}>
-              <MessageContent
-                className={
-                  m.role === "user"
-                    ? "group-[.is-user]:bg-brand-blue group-[.is-user]:text-on-brand rounded-2xl"
-                    : ""
-                }
-              >
-                {m.parts.map((p, i) =>
-                  p.type === "text" ? (
-                    m.role === "assistant" ? (
-                      <MessageResponse key={i}>{p.text}</MessageResponse>
-                    ) : (
-                      <span key={i}>{p.text}</span>
-                    )
-                  ) : null,
-                )}
-              </MessageContent>
-            </Message>
-          ))}
-          {status === "submitted" && <Shimmer>Talki is thinking...</Shimmer>}
-          {error && (
-            <p className="rounded-2xl bg-destructive/10 p-3 text-sm text-destructive">
-              {error.message || "Something went wrong. Please try again."}
-            </p>
-          )}
-        </ConversationContent>
-        <ConversationScrollButton />
-      </Conversation>
-      )}
-
-      {mode === "voice" ? (
-        <>
-        {error && <p className="rounded-2xl bg-destructive/10 p-3 text-sm text-destructive">{error.message || "Something went wrong. Please try again."}</p>}
-        <div className="flex flex-col items-center gap-3 py-4">
-          <button
-            onClick={toggleMic}
-            disabled={busy}
-            aria-label={listening ? "Stop recording" : "Start speaking"}
-            aria-busy={listening}
-            className="relative grid h-20 w-20 place-items-center rounded-full bg-brand-coral text-on-brand shadow-pop transition active:translate-y-1 disabled:cursor-not-allowed"
-          >
-            {listening ? (
-              <>
-                <span className="absolute inset-0 animate-ping rounded-full bg-brand-coral/60" />
-                <span className="relative flex h-9 items-center gap-1">
-                  {[0, 150, 300, 450].map((d) => (
-                    <span
-                      key={d}
-                      className="h-full w-1.5 animate-pulse rounded-full bg-on-brand"
-                      style={{ animationDelay: `${d}ms`, height: d % 300 ? "60%" : "100%" }}
-                    />
-                  ))}
-                </span>
-              </>
-            ) : (
-              <Mic className="h-9 w-9" />
-            )}
-          </button>
-          <p className="text-sm font-semibold text-muted-foreground">
-            {listening ? "Listening… tap to stop" : busy ? "Talki is answering…" : "Tap and speak"}
-          </p>
-          <div className="w-full">
-            <label htmlFor="voice-text" className="mb-1 block text-sm font-semibold text-brand-deep">
-              Text (double check)
-            </label>
-            <div className="flex gap-2">
-              <textarea
-                id="voice-text"
+            </div>
+          </>
+        ) : (
+          <div className="py-3">
+            <PromptInput onSubmit={() => sendPictos()} className="rounded-3xl bg-card">
+              <PromptInputTextarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                rows={2}
-                placeholder="Your words will appear here…"
-                className="flex-1 resize-none rounded-2xl border-2 border-brand-blue/30 bg-card px-3 py-2 text-brand-deep outline-none focus:border-brand-blue"
+                placeholder="Type a phrase to see it in pictograms..."
               />
-              <button
-                onClick={sendPictos}
-                disabled={busy || listening || !text.trim()}
-                className="rounded-2xl bg-brand-blue px-4 font-semibold text-on-brand disabled:opacity-50"
-              >
-                Send
-              </button>
-            </div>
+              <PromptInputFooter className="justify-end">
+                <PromptInputSubmit status={status} onStop={stop} disabled={!busy && !text.trim()} />
+              </PromptInputFooter>
+            </PromptInput>
           </div>
-        </div>
-        </>
-      ) : (
-        <div className="py-3">
-          <PromptInput onSubmit={() => sendPictos()} className="rounded-3xl bg-card">
-            <PromptInputTextarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Type a phrase to see it in pictograms..."
-            />
-            <PromptInputFooter className="justify-end">
-              <PromptInputSubmit status={status} onStop={stop} disabled={!busy && !text.trim()} />
-            </PromptInputFooter>
-          </PromptInput>
-        </div>
-      )}
-    </div>
-    </>
-  );
-}
-
-function PictoViewer({
-  pictos,
-  saved,
-  onSave,
-  onClose,
-}: {
-  pictos: Picto[];
-  saved: boolean;
-  onSave: () => void;
-  onClose: () => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const closeRef = useRef(onClose);
-  closeRef.current = onClose;
-  useEffect(() => {
-    const el = ref.current;
-    el?.requestFullscreen?.()
-      .then(() => (screen.orientation as unknown as { lock?: (o: string) => Promise<void> }).lock?.("landscape"))
-      .catch(() => {});
-    const onFs = () => !document.fullscreenElement && closeRef.current();
-    document.addEventListener("fullscreenchange", onFs);
-    return () => {
-      document.removeEventListener("fullscreenchange", onFs);
-      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    };
-  }, []);
-  const btn = "absolute grid h-14 w-14 place-items-center rounded-full text-on-brand shadow-pop";
-  return (
-    <div ref={ref} className="fixed inset-0 z-50 bg-background">
-      {/* Rotate to landscape on portrait screens when the browser can't lock orientation */}
-      <div className="absolute left-1/2 top-1/2 h-[100vh] w-[100vw] -translate-x-1/2 -translate-y-1/2 portrait:h-[100vw] portrait:w-[100vh] portrait:rotate-90">
-        <div className="flex h-full w-full items-center justify-center gap-4 overflow-x-auto px-20">
-          {pictos.map((pc, i) => (
-            <button
-              key={i}
-              onClick={() => speak(pc.label)}
-              className="flex shrink-0 flex-col items-center rounded-3xl border-4 border-brand-yellow bg-card p-4"
-            >
-              <span className="text-6xl sm:text-7xl">{pc.emoji}</span>
-              <span className="mt-2 font-display text-lg font-semibold text-brand-deep">{pc.label}</span>
-            </button>
-          ))}
-        </div>
-        <button onClick={onClose} aria-label="Exit" className={`${btn} right-4 top-4 bg-brand-deep`}>
-          <X className="h-7 w-7" />
-        </button>
-        <button
-          onClick={() => speak(pictos.map((p) => p.label).join(" "))}
-          aria-label="Listen"
-          className={`${btn} bottom-4 left-4 bg-brand-orange`}
-        >
-          <Volume2 className="h-7 w-7" />
-        </button>
-        <button onClick={onSave} aria-label={saved ? "Saved" : "Save"} className={`${btn} bottom-4 right-4 bg-brand-green`}>
-          {saved ? <BookmarkCheck className="h-7 w-7" /> : <Bookmark className="h-7 w-7" />}
-        </button>
+        )}
       </div>
-    </div>
+    </>
   );
 }
