@@ -27,7 +27,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-end justify-center px-5 py-10 md:items-center md:justify-start md:px-16">
+    <div className="relative isolate flex min-h-screen items-end justify-center px-5 py-10 md:items-center md:justify-start md:px-16">
       <picture className="absolute inset-0 -z-10">
         <source media="(min-width: 768px)" srcSet={bgDesktop} />
         <img src={bgMobile} alt="A mother teaching her child with Talki" className="h-full w-full object-cover" />
