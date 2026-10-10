@@ -202,8 +202,7 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
       {(
       <Conversation className="flex-1 rounded-3xl">
         <ConversationContent>
-          {mode === "voice" &&
-            pictoMsgs.map((pm) => (
+          {pictoMsgs.map((pm) => (
               <div key={pm.id} className="space-y-2">
                 <p className="ml-auto w-fit max-w-[85%] rounded-2xl bg-brand-blue px-4 py-2 text-on-brand">
                   {pm.text}
@@ -326,11 +325,11 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
         </>
       ) : (
         <div className="py-3">
-          <PromptInput onSubmit={submit} className="rounded-3xl bg-card">
+          <PromptInput onSubmit={() => sendPictos()} className="rounded-3xl bg-card">
             <PromptInputTextarea
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Ask about autism, speech, routines..."
+              placeholder="Type a phrase to see it in pictograms..."
             />
             <PromptInputFooter className="justify-end">
               <PromptInputSubmit status={status} onStop={stop} disabled={!busy && !text.trim()} />
