@@ -4,8 +4,6 @@ import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { Mic, MessageSquareText, ArrowLeft } from "lucide-react";
 import { speak } from "@/lib/talki";
-import logoAsset from "@/assets/talki-logo.png.asset.json";
-const logo = logoAsset.url;
 import isoAsset from "@/assets/talki-isotype.png.asset.json";
 import {
   Conversation,
@@ -39,13 +37,6 @@ export const Route = createFileRoute("/app/chat")({
   }),
   component: ChatPage,
 });
-
-const STARTERS = [
-  "How can I use pictograms at home?",
-  "Speech games for a 4-year-old",
-  "How do I handle meltdowns calmly?",
-  "Early signs of a speech delay?",
-];
 
 function ChatPage() {
   const [mode, setMode] = useState<null | "voice" | "text">(null);
