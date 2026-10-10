@@ -15,6 +15,8 @@ import {
 import { PictoViewer } from "@/components/PictoViewer";
 import { speak, PICTOS, useSavedPhrases, type Picto } from "@/lib/talki";
 import isoAsset from "@/assets/talki-isotype.png.asset.json";
+import { useUser } from "@/contexts/UserContext";
+import { KidSwitcher } from "@/components/KidSwitcher";
 import {
   Conversation,
   ConversationContent,
@@ -55,6 +57,7 @@ function ChatPage() {
 }
 
 function ModeChooser({ onPick }: { onPick: (m: "voice" | "text") => void }) {
+  const { activeKid } = useUser();
   const options = [
     {
       id: "voice" as const,
@@ -74,7 +77,7 @@ function ModeChooser({ onPick }: { onPick: (m: "voice" | "text") => void }) {
   return (
     <div className="mx-auto flex min-h-[calc(100dvh-8.5rem)] max-w-3xl flex-col items-center justify-center px-5 py-10 text-center md:min-h-screen">
       <img src={isoAsset.url} alt="" width={436} height={400} className="h-16 w-auto" />
-      <h1 className="mt-4 text-3xl text-brand-deep sm:text-4xl">What do you want to say?</h1>
+      <h1 className="mt-4 text-3xl text-brand-deep sm:text-4xl">What do you want to say{activeKid ? ` to ${activeKid.name}` : ''}?</h1>
       <div className="mt-10 grid w-full max-w-lg grid-cols-2 gap-6">
         {options.map((o) => (
           <div key={o.id} className="flex flex-col items-center">
@@ -106,6 +109,7 @@ type SR = {
 };
 
 function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void }) {
+  const { activeKid } = useUser();
   const [text, setText] = useState("");
   const [listening, setListening] = useState(false);
   const recRef = useRef<SR | null>(null);
@@ -209,10 +213,11 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
             height={400}
             className="h-11 w-auto shrink-0"
           />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="truncate text-2xl text-brand-deep">Talki Chat</h1>
             <p className="text-sm text-muted-foreground">Tips for parents & educators</p>
           </div>
+          <KidSwitcher />
         </div>
 
         {

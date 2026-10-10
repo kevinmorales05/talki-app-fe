@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Eye, Volume2, Trash2 } from "lucide-react";
 import { PictoViewer } from "@/components/PictoViewer";
 import { phraseText, toPicto, useSavedPhrases, type SavedPhrase } from "@/lib/talki";
+import { useUser } from "@/contexts/UserContext";
+import { KidSwitcher } from "@/components/KidSwitcher";
 
 export const Route = createFileRoute("/app/saved")({
   head: () => ({
@@ -20,6 +22,7 @@ export const Route = createFileRoute("/app/saved")({
 });
 
 function SavedPage() {
+  const { activeKid } = useUser();
   const { phrases, play, remove } = useSavedPhrases();
   const [viewing, setViewing] = useState<SavedPhrase | null>(null);
   const sorted = [...phrases].sort(
@@ -31,8 +34,13 @@ function SavedPage() {
       {viewing && (
         <PictoViewer pictos={viewing.pictos.map(toPicto)} onClose={() => setViewing(null)} />
       )}
-      <h1 className="text-3xl text-brand-deep">Saved Phrases</h1>
-      <p className="mt-1 text-muted-foreground">Tap View to see a phrase full screen.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl text-brand-deep">Saved Phrases</h1>
+          <p className="mt-1 text-muted-foreground">Tap View to see a phrase full screen.</p>
+        </div>
+        <KidSwitcher />
+      </div>
       {sorted.length === 0 && (
         <p className="mt-10 text-center text-muted-foreground">
           No phrases yet — save some from Train!

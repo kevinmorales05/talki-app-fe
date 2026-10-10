@@ -4,12 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import logoAsset from "@/assets/talki-logo.png.asset.json";
 const logo = logoAsset.url;
 import logoWhiteAsset from "@/assets/talki-logo-white.png.asset.json";
-import { getUser, logout } from "@/lib/talki";
+import { useUser } from "@/contexts/UserContext";
 
 export const Route = createFileRoute("/app")({
   ssr: false,
   beforeLoad: () => {
-    if (!getUser()) throw redirect({ to: "/login" });
+    try {
+      const stored = sessionStorage.getItem("talki-user-session");
+      if (!stored) throw redirect({ to: "/login" });
+    } catch {
+      throw redirect({ to: "/login" });
+    }
   },
   component: AppLayout,
 });
@@ -22,7 +27,7 @@ const NAV = [
 
 function AppLayout() {
   const navigate = useNavigate();
-  const user = getUser();
+  const { user, logoutUser } = useUser();
   const [menu, setMenu] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -30,8 +35,9 @@ function AppLayout() {
     document.addEventListener("click", h);
     return () => document.removeEventListener("click", h);
   }, []);
+  
   const doLogout = () => {
-    logout();
+    logoutUser();
     navigate({ to: "/login", replace: true });
   };
   const initial = (user?.name ?? "T").charAt(0).toUpperCase();

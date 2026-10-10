@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Volume2, X, Heart, Star, PartyPopper } from "lucide-react";
 import { LESSONS, PICTOS, phraseText, speak, useSavedPhrases } from "@/lib/talki";
+import { useUser } from "@/contexts/UserContext";
+import { KidSwitcher } from "@/components/KidSwitcher";
 
 export const Route = createFileRoute("/app/train")({
   head: () => ({
@@ -19,6 +21,7 @@ const TONES = ["bg-brand-coral", "bg-brand-yellow", "bg-brand-green", "bg-brand-
 const CHEERS = ["Amazing! 🎉", "You did it! ⭐", "Super star! 🌟", "Great job! 💪"];
 
 function TrainPage() {
+  const { activeKid } = useUser();
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<number[]>([]);
   const [result, setResult] = useState<null | "right" | "wrong">(null);
@@ -74,7 +77,10 @@ function TrainPage() {
         <span className="flex items-center gap-1 font-bold text-brand-orange"><Star className="h-5 w-5 fill-current" />{stars}</span>
       </div>
 
-      <h1 className="mt-8 text-2xl text-brand-deep sm:text-3xl">Build the phrase</h1>
+      <div className="mt-8 flex items-center justify-between">
+        <h1 className="text-2xl text-brand-deep sm:text-3xl">Build the phrase</h1>
+        <KidSwitcher />
+      </div>
       <button onClick={() => speak(phraseText(lesson.target))} className="mt-3 flex items-center gap-3 self-start rounded-2xl bg-sky px-4 py-3 text-lg font-bold text-brand-deep">
         <Volume2 className="h-6 w-6 text-brand-blue" /> “{phraseText(lesson.target)}”
       </button>
