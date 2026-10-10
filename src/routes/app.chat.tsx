@@ -166,7 +166,8 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
         </div>
       </div>
 
-      <Conversation className="flex-1 rounded-3xl bg-sky">
+      {mode === "text" && (
+      <Conversation className="flex-1 rounded-3xl">
         <ConversationContent>
           {messages.map((m) => (
             <Message key={m.id} from={m.role}>
@@ -198,8 +199,11 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
+      )}
 
       {mode === "voice" ? (
+        <>
+        {error && <p className="rounded-2xl bg-destructive/10 p-3 text-sm text-destructive">{error.message || "Something went wrong. Please try again."}</p>}
         <div className="flex flex-col items-center gap-3 py-4">
           <button
             onClick={toggleMic}
