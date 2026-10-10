@@ -3,7 +3,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { Mic, MessageSquareText, ArrowLeft } from "lucide-react";
-import { speak } from "@/lib/talki";
+import { speak, PICTOS, type Picto } from "@/lib/talki";
 import isoAsset from "@/assets/talki-isotype.png.asset.json";
 import {
   Conversation,
@@ -89,6 +89,7 @@ type SR = {
   stop: () => void;
   lang: string;
   interimResults: boolean;
+  continuous: boolean;
   onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
   onend: () => void;
   onerror: () => void;
@@ -101,6 +102,21 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
   const { messages, sendMessage, status, stop, error } = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
   });
+
+  const [pictoMsgs, setPictoMsgs] = useState<{ id: string; text: string; pictos: Picto[] }[]>([]);
+  // Mock: turn each spoken word into a pictogram card.
+  const sendPictos = () => {
+    const said = text.trim();
+    if (!said) return;
+    const pictos = said
+      .toLowerCase()
+      .replace(/[^\p{L}\s']/gu, "")
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w, i) => PICTOS[w] ?? { id: `${w}-${i}`, emoji: "💬", label: w });
+    setPictoMsgs((prev) => [...prev, { id: crypto.randomUUID(), text: said, pictos }]);
+    setText("");
+  };
 
   const submit = (m: PromptInputMessage) => {
     if (!m.text?.trim()) return;
@@ -134,6 +150,7 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
     const rec: SR = new Ctor();
     rec.lang = "en-US";
     rec.interimResults = true;
+    rec.continuous = true;
     rec.onresult = (e) => {
       const said = Array.from(e.results)
         .map((r) => r[0]?.transcript ?? "")
@@ -169,7 +186,27 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
       {(
       <Conversation className="flex-1 rounded-3xl">
         <ConversationContent>
-          {messages.map((m) => (
+          {mode === "voice" &&
+            pictoMsgs.map((pm) => (
+              <div key={pm.id} className="space-y-2">
+                <p className="ml-auto w-fit max-w-[85%] rounded-2xl bg-brand-blue px-4 py-2 text-on-brand">
+                  {pm.text}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {pm.pictos.map((pc, i) => (
+                    <button
+                      key={i}
+                      onClick={() => speak(pc.label)}
+                      className="flex w-20 flex-col items-center rounded-2xl border-2 border-brand-yellow bg-card p-2 shadow-sm"
+                    >
+                      <span className="text-4xl">{pc.emoji}</span>
+                      <span className="mt-1 text-xs font-semibold text-brand-deep">{pc.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          {mode === "text" && messages.map((m) => (
             <Message key={m.id} from={m.role}>
               <MessageContent
                 className={
@@ -207,8 +244,8 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
         <div className="flex flex-col items-center gap-3 py-4">
           <button
             onClick={toggleMic}
-            disabled={busy || listening}
-            aria-label={listening ? "Listening" : "Start speaking"}
+            disabled={busy}
+            aria-label={listening ? "Stop recording" : "Start speaking"}
             aria-busy={listening}
             className="relative grid h-20 w-20 place-items-center rounded-full bg-brand-coral text-on-brand shadow-pop transition active:translate-y-1 disabled:cursor-not-allowed"
           >
@@ -230,7 +267,7 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
             )}
           </button>
           <p className="text-sm font-semibold text-muted-foreground">
-            {listening ? "Listening…" : busy ? "Talki is answering…" : "Tap and speak"}
+            {listening ? "Listening… tap to stop" : busy ? "Talki is answering…" : "Tap and speak"}
           </p>
           <div className="w-full">
             <label htmlFor="voice-text" className="mb-1 block text-sm font-semibold text-brand-deep">
@@ -246,7 +283,7 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
                 className="flex-1 resize-none rounded-2xl border-2 border-brand-blue/30 bg-card px-3 py-2 text-brand-deep outline-none focus:border-brand-blue"
               />
               <button
-                onClick={() => submit({ text, files: [] })}
+                onClick={sendPictos}
                 disabled={busy || listening || !text.trim()}
                 className="rounded-2xl bg-brand-blue px-4 font-semibold text-on-brand disabled:opacity-50"
               >
