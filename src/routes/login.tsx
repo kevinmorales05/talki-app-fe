@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import mascot from "@/assets/talki-mascot.png";
+import logoAsset from "@/assets/talki-logo.png.asset.json";
+const logo = logoAsset.url;
 import { login } from "@/lib/talki";
 
 export const Route = createFileRoute("/login")({
@@ -33,7 +34,7 @@ function LoginPage() {
     <div className="grid min-h-screen place-items-center bg-hero px-5 py-10">
       <div className="w-full max-w-md rounded-[2rem] bg-card p-8 shadow-soft">
         <Link to="/" className="flex flex-col items-center">
-          <img src={mascot} alt="Talki" width={72} height={72} className="h-18 w-18" />
+          <img src={logo} alt="Talki" width={1774} height={887} className="h-20 w-auto" />
           <h1 className="mt-2 text-3xl text-brand-deep">Welcome to Talki</h1>
         </Link>
         <p className="mt-1 text-center text-muted-foreground">Log in to continue</p>

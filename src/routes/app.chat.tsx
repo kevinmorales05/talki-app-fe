@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useState } from "react";
-import mascot from "@/assets/talki-mascot.png";
+import logoAsset from "@/assets/talki-logo.png.asset.json";
+const logo = logoAsset.url;
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea, type PromptInputMessage } from "@/components/ai-elements/prompt-input";
@@ -43,7 +44,7 @@ function ChatPage() {
   return (
     <div className="mx-auto flex h-[calc(100dvh-8.5rem)] max-w-3xl flex-col px-4 md:h-screen md:py-6">
       <div className="flex items-center gap-3 py-4">
-        <img src={mascot} alt="" width={44} height={44} className="h-11 w-11 shrink-0" />
+        <img src={logo} alt="Talki" width={1774} height={887} className="h-10 w-auto shrink-0" />
         <div className="min-w-0">
           <h1 className="truncate text-2xl text-brand-deep">Talki Chat</h1>
           <p className="text-sm text-muted-foreground">Tips for parents & educators</p>
@@ -54,7 +55,7 @@ function ChatPage() {
         <ConversationContent>
           {messages.length === 0 && (
             <div className="flex flex-col items-center py-10 text-center">
-              <img src={mascot} alt="" width={96} height={96} className="h-24 w-24" />
+              <img src={logo} alt="Talki" width={1774} height={887} className="h-20 w-auto" />
               <h2 className="mt-3 text-xl text-brand-deep">Hi! How can I help today?</h2>
               <div className="mt-5 grid w-full gap-2 sm:grid-cols-2">
                 {STARTERS.map((s) => (

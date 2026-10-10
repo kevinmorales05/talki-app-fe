@@ -1,7 +1,8 @@
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { MessageCircle, Star, Bookmark, User, LogOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import mascot from "@/assets/talki-mascot.png";
+import logoAsset from "@/assets/talki-logo.png.asset.json";
+const logo = logoAsset.url;
 import { getUser, logout } from "@/lib/talki";
 
 export const Route = createFileRoute("/app")({
@@ -38,9 +39,8 @@ function AppLayout() {
     <div className="min-h-screen bg-background">
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col bg-sidebar p-5 text-sidebar-foreground md:flex">
-        <Link to="/" className="mb-8 flex items-center gap-2">
-          <img src={mascot} alt="" width={40} height={40} className="h-10 w-10" />
-          <span className="font-display text-2xl font-bold">Talki</span>
+        <Link to="/" className="mb-8 flex items-center justify-center rounded-2xl bg-card px-4 py-3">
+          <img src={logo} alt="Talki" width={1774} height={887} className="h-12 w-auto" />
         </Link>
         <nav className="flex flex-1 flex-col gap-1.5">
           {[...NAV, { to: "/app/profile", label: "Profile", icon: User } as const].map((n) => (
@@ -59,8 +59,7 @@ function AppLayout() {
       {/* Mobile header */}
       <header className="sticky top-0 z-30 grid grid-cols-[minmax(0,1fr)_auto] items-center border-b bg-card/95 px-4 py-3 backdrop-blur md:hidden">
         <Link to="/" className="flex min-w-0 items-center gap-2">
-          <img src={mascot} alt="" width={32} height={32} className="h-8 w-8 shrink-0" />
-          <span className="truncate font-display text-xl font-bold text-brand-deep">Talki</span>
+          <img src={logo} alt="Talki" width={1774} height={887} className="h-9 w-auto shrink-0" />
         </Link>
         <div ref={ref} className="relative">
           <button onClick={() => setMenu((m) => !m)} aria-label="Account menu"

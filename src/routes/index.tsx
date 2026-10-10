@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Brain, MessageSquareHeart, Trophy, ArrowRight } from "lucide-react";
 import hero from "@/assets/hero.jpg";
-import mascot from "@/assets/talki-mascot.png";
+import logoAsset from "@/assets/talki-logo.png.asset.json";
+const logo = logoAsset.url;
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -43,8 +44,7 @@ function Landing() {
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
         <Link to="/" className="flex items-center gap-2">
-          <img src={mascot} alt="" width={40} height={40} className="h-10 w-10" />
-          <span className="font-display text-2xl font-bold text-brand-deep">Talki</span>
+          <img src={logo} alt="Talki" width={1774} height={887} className="h-11 w-auto" />
         </Link>
         <Link to="/login" className="rounded-full bg-brand-deep px-5 py-2 font-bold text-on-brand transition hover:opacity-90">
           Login
