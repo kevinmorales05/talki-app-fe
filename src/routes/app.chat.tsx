@@ -255,6 +255,7 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
             </div>
           </div>
         </div>
+        </>
       ) : (
         <div className="py-3">
           <PromptInput onSubmit={submit} className="rounded-3xl bg-card">
