@@ -133,13 +133,13 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
     }
     const rec: SR = new Ctor();
     rec.lang = "en-US";
-    rec.interimResults = false;
+    rec.interimResults = true;
     rec.onresult = (e) => {
       const said = Array.from(e.results)
         .map((r) => r[0]?.transcript ?? "")
         .join(" ")
         .trim();
-      if (said) setText(said);
+      setText(said);
     };
     rec.onend = () => setListening(false);
     rec.onerror = () => setListening(false);
