@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
+import { io } from "socket.io-client";
 import {
   Mic,
   MessageSquareText,
@@ -11,10 +10,11 @@ import {
   Bookmark,
   BookmarkCheck,
   Maximize2,
+  Trash2,
+  ExternalLink,
 } from "lucide-react";
 import { PictoViewer } from "@/components/PictoViewer";
-import { speak, PICTOS, useSavedPhrases, type Picto } from "@/lib/talki";
-const iso = "/talki-isotype.png";
+import { speak, useSavedPhrases, type Picto } from "@/lib/talki";
 import { useUser } from "@/contexts/UserContext";
 import { KidSwitcher } from "@/components/KidSwitcher";
 import {
@@ -38,11 +38,6 @@ export const Route = createFileRoute("/app/chat")({
       { title: "Talki Chat — Ask about autism & speech" },
       {
         name: "description",
-        content: "Ask Talki's AI about autism, speech therapy tips and child development.",
-      },
-      { property: "og:title", content: "Talki Chat" },
-      {
-        property: "og:description",
         content: "Ask Talki's AI about autism, speech therapy tips and child development.",
       },
     ],
@@ -76,8 +71,10 @@ function ModeChooser({ onPick }: { onPick: (m: "voice" | "text") => void }) {
   ];
   return (
     <div className="mx-auto flex min-h-[calc(100dvh-8.5rem)] max-w-3xl flex-col items-center justify-center px-5 py-10 text-center md:min-h-screen">
-      <img src={iso} alt="" width={436} height={400} className="h-16 w-auto" />
-      <h1 className="mt-4 text-3xl text-brand-deep sm:text-4xl">What do you want to say{activeKid ? ` to ${activeKid.name}` : ''}?</h1>
+      <img src="/talki-isotype.png" alt="Talki" width={436} height={400} className="h-16 w-auto" />
+      <h1 className="mt-4 text-3xl text-brand-deep sm:text-4xl">
+        What do you want to say{activeKid ? ` to ${activeKid.name}` : ""}?
+      </h1>
       <div className="mt-10 grid w-full max-w-lg grid-cols-2 gap-6">
         {options.map((o) => (
           <div key={o.id} className="flex flex-col items-center">
@@ -97,6 +94,20 @@ function ModeChooser({ onPick }: { onPick: (m: "voice" | "text") => void }) {
   );
 }
 
+// Socket instance
+const socket = io(import.meta.env.VITE_WS_URL || "ws://localhost:3000", {
+  autoConnect: false,
+});
+
+export interface WsMessage {
+  id: string;
+  type: "system" | "user";
+  message: string;
+  responseType?: number;
+  phrase?: any[];
+  quotes?: any[];
+}
+
 type SR = {
   start: () => void;
   stop: () => void;
@@ -109,56 +120,93 @@ type SR = {
 };
 
 function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void }) {
-  const { activeKid } = useUser();
   const [text, setText] = useState("");
   const [listening, setListening] = useState(false);
   const recRef = useRef<SR | null>(null);
-  const { messages, sendMessage, status, stop, error } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
-  });
+
+  const [chatHistory, setChatHistory] = useState<WsMessage[]>([
+    { id: crypto.randomUUID(), type: "system", message: "Welcome to Talki, how can I help you?" }
+  ]);
+  const [isThinking, setIsThinking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const saved = useSavedPhrases();
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [viewing, setViewing] = useState<{ id: string; pictos: Picto[] } | null>(null);
+
   const savePictos = (id: string, pictos: Picto[]) => {
     saved.add(pictos.map((p) => p.id));
     setSavedIds((s) => (s.includes(id) ? s : [...s, id]));
   };
-  const [pictoMsgs, setPictoMsgs] = useState<{ id: string; text: string; pictos: Picto[] }[]>([]);
-  // Mock: turn each spoken word into a pictogram card.
-  const sendPictos = () => {
-    const said = text.trim();
-    if (!said) return;
-    const pictos = said
-      .toLowerCase()
-      .replace(/[^\p{L}\s']/gu, "")
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((w) => PICTOS[w] ?? { id: w, emoji: "💬", label: w });
-    setPictoMsgs((prev) => [...prev, { id: crypto.randomUUID(), text: said, pictos }]);
-    setText("");
-  };
 
-  const submit = (m: PromptInputMessage) => {
-    if (!m.text?.trim()) return;
-    sendMessage({ text: m.text });
-    setText("");
-  };
-  const busy = status === "submitted" || status === "streaming";
-
-  // In voice mode, read each finished answer aloud.
-  const lastSpoken = useRef<string | null>(null);
   useEffect(() => {
-    if (mode !== "voice" || status !== "ready") return;
-    const last = messages[messages.length - 1];
-    if (!last || last.role !== "assistant" || lastSpoken.current === last.id) return;
-    lastSpoken.current = last.id;
-    const t = last.parts
-      .map((p) => (p.type === "text" ? p.text : ""))
-      .join(" ")
-      .replace(/[*#_`>-]/g, "");
-    speak(t);
-  }, [mode, status, messages]);
+    socket.connect();
+
+    const handleResponse = (response: any) => {
+      setIsThinking(false);
+      
+      const newMessage: WsMessage = {
+        id: crypto.randomUUID(),
+        type: "system",
+        message: response.response || "",
+        responseType: response.type || (response.phrase ? 1 : null),
+        phrase: response.phrase,
+        quotes: response.quotes,
+      };
+
+      if (newMessage.responseType === 1 && response.phrase) {
+        const sentence = response.phrase.map((p: any) => p.word).join(" ");
+        newMessage.message = `Pictogram: ${sentence}`;
+      }
+      
+      if (newMessage.message || newMessage.phrase || newMessage.quotes) {
+        setChatHistory((prev) => [...prev, newMessage]);
+        
+        if (mode === "voice" && newMessage.message) {
+          speak(newMessage.message);
+        }
+      }
+    };
+
+    const handleError = (err: Error) => {
+      setIsThinking(false);
+      setError("Connection failed: " + err.message);
+    };
+
+    socket.on("kidsChatResponse", handleResponse);
+    socket.on("connect_error", handleError);
+
+    return () => {
+      socket.off("kidsChatResponse", handleResponse);
+      socket.off("connect_error", handleError);
+      socket.disconnect();
+    };
+  }, [mode]);
+
+  const handleSendMessage = (content: string) => {
+    if (!content.trim()) return;
+    const newMessage: WsMessage = { id: crypto.randomUUID(), type: "user", message: content.trim() };
+    
+    const newHistory = [...chatHistory, newMessage];
+    setChatHistory(newHistory);
+    setIsThinking(true);
+    setText("");
+    setError(null);
+
+    const payload = {
+      history: newHistory.map((m) => ({ type: m.type, message: m.message }))
+    };
+    socket.emit("kidsChat", payload);
+  };
+
+  const submitText = (m: PromptInputMessage) => {
+    if (m.text) handleSendMessage(m.text);
+  };
+
+  const clearChat = () => {
+    setChatHistory([{ id: crypto.randomUUID(), type: "system", message: "Welcome to Talki, how can I help you?" }]);
+    setError(null);
+  };
 
   const toggleMic = () => {
     if (listening) return recRef.current?.stop();
@@ -202,111 +250,135 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
           <button
             onClick={onBack}
             aria-label="Back"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted text-brand-deep"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted text-brand-deep transition hover:bg-muted/80"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <img
-            src={iso}
-            alt=""
-            width={436}
-            height={400}
-            className="h-11 w-auto shrink-0"
-          />
+          <img src="/talki-isotype.png" alt="Talki" width={436} height={400} className="h-11 w-auto shrink-0" />
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-2xl text-brand-deep">Talki Chat</h1>
             <p className="text-sm text-muted-foreground">Tips for parents & educators</p>
           </div>
+          <button onClick={clearChat} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive transition hover:bg-destructive/20" aria-label="Clear Chat" title="Clear Chat">
+            <Trash2 className="h-4 w-4" />
+          </button>
           <KidSwitcher />
         </div>
 
-        {
-          <Conversation className="flex-1 rounded-3xl">
-            <ConversationContent>
-              {pictoMsgs.map((pm) => (
-                <div key={pm.id} className="space-y-2">
-                  <p className="ml-auto w-fit max-w-[85%] rounded-2xl bg-brand-blue px-4 py-2 text-on-brand">
-                    {pm.text}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {pm.pictos.map((pc, i) => (
-                      <button
-                        key={i}
-                        onClick={() => speak(pc.label)}
-                        className="flex w-20 flex-col items-center rounded-2xl border-2 border-brand-yellow bg-card p-2 shadow-sm"
-                      >
-                        <span className="text-4xl">{pc.emoji}</span>
-                        <span className="mt-1 text-xs font-semibold text-brand-deep">
-                          {pc.label}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setViewing({ id: pm.id, pictos: pm.pictos })}
-                      className="flex items-center gap-1.5 rounded-full bg-brand-blue px-4 py-2 text-sm font-semibold text-on-brand"
-                    >
-                      <Maximize2 className="h-4 w-4" /> See
-                    </button>
-                    <button
-                      onClick={() => savePictos(pm.id, pm.pictos)}
-                      className="flex items-center gap-1.5 rounded-full bg-brand-green px-4 py-2 text-sm font-semibold text-on-brand"
-                    >
-                      {savedIds.includes(pm.id) ? (
-                        <BookmarkCheck className="h-4 w-4" />
-                      ) : (
-                        <Bookmark className="h-4 w-4" />
-                      )}
-                      {savedIds.includes(pm.id) ? "Saved" : "Save"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {mode === "text" &&
-                messages.map((m) => (
-                  <Message key={m.id} from={m.role}>
-                    <MessageContent
-                      className={
-                        m.role === "user"
-                          ? "group-[.is-user]:bg-brand-blue group-[.is-user]:text-on-brand rounded-2xl"
-                          : ""
-                      }
-                    >
-                      {m.parts.map((p, i) =>
-                        p.type === "text" ? (
-                          m.role === "assistant" ? (
-                            <MessageResponse key={i}>{p.text}</MessageResponse>
-                          ) : (
-                            <span key={i}>{p.text}</span>
-                          )
-                        ) : null,
-                      )}
+        <Conversation className="flex-1 rounded-3xl">
+          <ConversationContent>
+            {chatHistory.map((m) => (
+              <div key={m.id} className="space-y-2 mb-4">
+                {m.type === "user" ? (
+                  <Message from="user">
+                    <MessageContent className="rounded-2xl group-[.is-user]:bg-brand-blue group-[.is-user]:text-on-brand">
+                      {m.message}
                     </MessageContent>
                   </Message>
-                ))}
-              {status === "submitted" && <Shimmer>Talki is thinking...</Shimmer>}
-              {error && (
-                <p className="rounded-2xl bg-destructive/10 p-3 text-sm text-destructive">
-                  {error.message || "Something went wrong. Please try again."}
-                </p>
-              )}
-            </ConversationContent>
-            <ConversationScrollButton />
-          </Conversation>
-        }
+                ) : (
+                  <>
+                    {/* System text output (Case 2, 4, or generic message) */}
+                    {m.message && m.responseType !== 1 && (
+                      <Message from="assistant">
+                        <MessageContent>
+                          <MessageResponse>{m.message}</MessageResponse>
+                        </MessageContent>
+                      </Message>
+                    )}
+
+                    {/* Type 1: Pictogram phrase output */}
+                    {m.phrase && (
+                      <div className="mt-2 flex flex-col gap-3 ml-2">
+                        <p className="text-sm text-muted-foreground font-semibold">Pictogram translation:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {[...m.phrase]
+                            .sort((a, b) => a.order - b.order)
+                            .map((p: any, idx: number) => (
+                              <button
+                                key={idx}
+                                onClick={() => speak(p.word)}
+                                className="flex w-24 flex-col items-center justify-center rounded-2xl border-2 border-brand-yellow bg-card p-2 shadow-sm"
+                              >
+                                {p.pictogram?.url ? (
+                                  <img src={p.pictogram.url} alt={p.word} className="h-12 w-12 object-contain" />
+                                ) : (
+                                  <span className="text-4xl">💬</span>
+                                )}
+                                <span className="mt-1 text-xs font-semibold text-brand-deep capitalize text-center">
+                                  {p.word}
+                                </span>
+                              </button>
+                            ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              const pictos = m.phrase!.sort((a, b) => a.order - b.order).map((p: any) => ({
+                                id: p.word,
+                                label: p.word,
+                                emoji: "💬",
+                                url: p.pictogram?.url,
+                              }));
+                              setViewing({ id: m.id, pictos });
+                            }}
+                            className="flex items-center gap-1.5 rounded-full bg-brand-blue px-4 py-2 text-sm font-semibold text-on-brand"
+                          >
+                            <Maximize2 className="h-4 w-4" /> See
+                          </button>
+                          <button
+                            onClick={() => {
+                              const pictos = m.phrase!.sort((a, b) => a.order - b.order).map((p: any) => ({
+                                id: p.word,
+                                label: p.word,
+                                emoji: "💬",
+                                url: p.pictogram?.url,
+                              }));
+                              savePictos(m.id, pictos);
+                            }}
+                            className="flex items-center gap-1.5 rounded-full bg-brand-green px-4 py-2 text-sm font-semibold text-on-brand"
+                          >
+                            {savedIds.includes(m.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+                            {savedIds.includes(m.id) ? "Saved" : "Save"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Type 2: Quotes and Sources */}
+                    {m.quotes && m.quotes.length > 0 && (
+                      <div className="mt-2 flex flex-col gap-2 ml-2">
+                        {m.quotes.map((q: any, idx: number) => (
+                          <div key={idx} className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground shadow-sm">
+                            <p className="italic">"{q.quote}"</p>
+                            {q.url && (
+                              <a href={q.url} target="_blank" rel="noreferrer" className="mt-3 flex items-center gap-1.5 font-bold text-brand-blue hover:underline">
+                                <ExternalLink className="h-4 w-4" /> View Source
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+            {isThinking && <Shimmer>Talki is thinking...</Shimmer>}
+            {error && (
+              <p className="rounded-2xl bg-destructive/10 p-3 text-sm text-destructive">
+                {error}
+              </p>
+            )}
+          </ConversationContent>
+          <ConversationScrollButton />
+        </Conversation>
 
         {mode === "voice" ? (
           <>
-            {error && (
-              <p className="rounded-2xl bg-destructive/10 p-3 text-sm text-destructive">
-                {error.message || "Something went wrong. Please try again."}
-              </p>
-            )}
             <div className="flex flex-col items-center gap-3 py-4">
               <button
                 onClick={toggleMic}
-                disabled={busy}
+                disabled={isThinking}
                 aria-label={listening ? "Stop recording" : "Start speaking"}
                 aria-busy={listening}
                 className="relative grid h-20 w-20 place-items-center rounded-full bg-brand-coral text-on-brand shadow-pop transition active:translate-y-1 disabled:cursor-not-allowed"
@@ -331,7 +403,7 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
               <p className="text-sm font-semibold text-muted-foreground">
                 {listening
                   ? "Listening… tap to stop"
-                  : busy
+                  : isThinking
                     ? "Talki is answering…"
                     : "Tap and speak"}
               </p>
@@ -352,8 +424,8 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
                     className="flex-1 resize-none rounded-2xl border-2 border-brand-blue/30 bg-card px-3 py-2 text-brand-deep outline-none focus:border-brand-blue"
                   />
                   <button
-                    onClick={sendPictos}
-                    disabled={busy || listening || !text.trim()}
+                    onClick={() => handleSendMessage(text)}
+                    disabled={isThinking || listening || !text.trim()}
                     className="rounded-2xl bg-brand-blue px-4 font-semibold text-on-brand disabled:opacity-50"
                   >
                     Send
@@ -364,14 +436,14 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
           </>
         ) : (
           <div className="py-3">
-            <PromptInput onSubmit={() => sendPictos()} className="rounded-3xl bg-card">
+            <PromptInput onSubmit={submitText} className="rounded-3xl bg-card">
               <PromptInputTextarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Type a phrase to see it in pictograms..."
+                placeholder="Type a message..."
               />
               <PromptInputFooter className="justify-end">
-                <PromptInputSubmit status={status} onStop={stop} disabled={!busy && !text.trim()} />
+                <PromptInputSubmit status={isThinking ? "submitted" : "ready"} onStop={() => setIsThinking(false)} disabled={(!text.trim() && !isThinking) || isThinking} />
               </PromptInputFooter>
             </PromptInput>
           </div>

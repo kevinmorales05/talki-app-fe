@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-export type Picto = { id: string; emoji: string; label: string };
+export type Picto = { id: string; emoji: string; label: string; url?: string };
 
 export const PICTOS: Record<string, Picto> = {
   i: { id: "i", emoji: "🙋", label: "I" },

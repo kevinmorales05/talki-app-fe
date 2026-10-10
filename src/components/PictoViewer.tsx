@@ -44,7 +44,11 @@ export function PictoViewer({
               onClick={() => speak(pc.label)}
               className="flex shrink-0 flex-col items-center rounded-3xl border-4 border-brand-yellow bg-card p-4"
             >
-              <span className="text-6xl sm:text-7xl">{pc.emoji}</span>
+              {pc.url ? (
+                <img src={pc.url} alt={pc.label} className="h-16 w-16 sm:h-20 sm:w-20 object-contain" />
+              ) : (
+                <span className="text-6xl sm:text-7xl">{pc.emoji}</span>
+              )}
               <span className="mt-2 font-display text-lg font-semibold text-brand-deep">
                 {pc.label}
               </span>
