@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import logoAsset from "@/assets/talki-logo.png.asset.json";
-const logo = logoAsset.url;
+const logo = "/talki-logo.png";
 import bgDesktop from "@/assets/login-desktop.jpg";
 import bgMobile from "@/assets/login-mobile.jpg";
 
