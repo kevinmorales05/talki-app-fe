@@ -46,6 +46,8 @@ export function speak(text: string) {
   }
 }
 
+export const toPicto = (id: string): Picto => PICTOS[id] ?? { id, emoji: "💬", label: id };
+
 export const phraseText = (ids: string[]) => ids.map((id) => PICTOS[id]?.label ?? id).join(" ");
 
 /* ---------- mock auth ---------- */
