@@ -37,9 +37,13 @@ export function speak(text: string) {
   const voice = synth.getVoices().find((v) => v.lang.startsWith("en"));
   if (voice) u.voice = voice;
   // Some browsers drop an utterance spoken right after cancel(), or stay paused.
-  if (synth.speaking || synth.pending) synth.cancel();
   synth.resume();
-  setTimeout(() => synth.speak(u), 50);
+  if (synth.speaking || synth.pending) {
+    synth.cancel();
+    setTimeout(() => synth.speak(u), 50);
+  } else {
+    synth.speak(u);
+  }
 }
 
 export const phraseText = (ids: string[]) => ids.map((id) => PICTOS[id]?.label ?? id).join(" ");
