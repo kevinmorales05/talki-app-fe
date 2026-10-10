@@ -135,7 +135,7 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
   const toggleMic = () => {
     if (listening) return recRef.current?.stop();
     const W = window as unknown as Record<string, (new () => SR) | undefined>;
-    const Ctor = W.SpeechRecognition || W.webkitSpeechRecognition;
+    const Ctor = W["SpeechRecognition"] || W["webkitSpeechRecognition"];
     if (!Ctor) {
       alert("Voice input isn't supported in this browser. Try Chrome or Edge.");
       return;
