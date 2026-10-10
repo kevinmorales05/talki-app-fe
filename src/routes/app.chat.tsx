@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { PictoViewer } from "@/components/PictoViewer";
 import { speak, PICTOS, useSavedPhrases, type Picto } from "@/lib/talki";
-import isoAsset from "@/assets/talki-isotype.png.asset.json";
+const iso = "/talki-isotype.png";
 import { useUser } from "@/contexts/UserContext";
 import { KidSwitcher } from "@/components/KidSwitcher";
 import {
@@ -76,7 +76,7 @@ function ModeChooser({ onPick }: { onPick: (m: "voice" | "text") => void }) {
   ];
   return (
     <div className="mx-auto flex min-h-[calc(100dvh-8.5rem)] max-w-3xl flex-col items-center justify-center px-5 py-10 text-center md:min-h-screen">
-      <img src={isoAsset.url} alt="" width={436} height={400} className="h-16 w-auto" />
+      <img src={iso} alt="" width={436} height={400} className="h-16 w-auto" />
       <h1 className="mt-4 text-3xl text-brand-deep sm:text-4xl">What do you want to say{activeKid ? ` to ${activeKid.name}` : ''}?</h1>
       <div className="mt-10 grid w-full max-w-lg grid-cols-2 gap-6">
         {options.map((o) => (
@@ -207,7 +207,7 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
             <ArrowLeft className="h-5 w-5" />
           </button>
           <img
-            src={isoAsset.url}
+            src={iso}
             alt=""
             width={436}
             height={400}

@@ -60,7 +60,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setToken(firebaseToken);
     
     const defaultKid = kidsData.length > 0 ? kidsData[0] : null;
-    setActiveKidState(defaultKid);
+    setActiveKidState(defaultKid ?? null);
     
     sessionStorage.setItem(SESSION_KEY, JSON.stringify({
       user: userData,
@@ -78,7 +78,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       ? newKids.find(k => k._id === activeKid._id)! 
       : newKids.length > 0 ? newKids[0] : null;
       
-    setActiveKidState(updatedActiveKid);
+    setActiveKidState(updatedActiveKid ?? null);
 
     if (user && token) {
       sessionStorage.setItem(SESSION_KEY, JSON.stringify({
