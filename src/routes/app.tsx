@@ -86,7 +86,7 @@ function AppLayout() {
 
       {/* Mobile bottom tabs */}
       <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t bg-card md:hidden">
-        {NAV.map((n) => (
+        {[NAV[1], NAV[0], NAV[2]].map((n) => (
           <Link key={n.to} to={n.to} className="flex flex-col items-center gap-1 py-2.5 text-xs font-bold text-muted-foreground"
             activeProps={{ className: "text-brand-blue" }}>
             <n.icon className="h-6 w-6" />
