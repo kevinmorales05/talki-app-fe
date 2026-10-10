@@ -98,7 +98,7 @@ type SR = {
   stop: () => void;
   lang: string;
   interimResults: boolean;
-  onresult: (e: any) => void;
+  onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
   onend: () => void;
   onerror: () => void;
 };
@@ -134,7 +134,7 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
 
   const toggleMic = () => {
     if (listening) return recRef.current?.stop();
-    const W = window as any;
+    const W = window as unknown as Record<string, (new () => SR) | undefined>;
     const Ctor = W.SpeechRecognition || W.webkitSpeechRecognition;
     if (!Ctor) {
       alert("Voice input isn't supported in this browser. Try Chrome or Edge.");
