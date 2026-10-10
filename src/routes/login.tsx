@@ -18,16 +18,10 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
 
-  const go = (mail: string) => {
-    login(mail || "parent@talki.app");
+  const go = () => {
+    login("google.user@gmail.com");
     navigate({ to: "/app/chat" });
-  };
-  const onSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    go(email);
   };
 
   return (
@@ -39,27 +33,8 @@ function LoginPage() {
         </Link>
         <p className="mt-1 text-center text-muted-foreground">Log in to continue</p>
 
-        <form onSubmit={onSubmit} className="mt-7 space-y-4">
-          <label className="block">
-            <span className="text-sm font-bold text-brand-deep">Email</span>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com"
-              className="mt-1 w-full rounded-2xl border-2 border-input bg-background px-4 py-3 outline-none focus:border-brand-blue" />
-          </label>
-          <label className="block">
-            <span className="text-sm font-bold text-brand-deep">Password</span>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••"
-              className="mt-1 w-full rounded-2xl border-2 border-input bg-background px-4 py-3 outline-none focus:border-brand-blue" />
-          </label>
-          <button type="submit" className="w-full rounded-full bg-brand-blue py-3.5 text-lg font-bold text-on-brand shadow-pop transition active:translate-y-1">
-            Login
-          </button>
-        </form>
-
-        <div className="my-5 flex items-center gap-3 text-sm text-muted-foreground">
-          <div className="h-px flex-1 bg-border" /> or <div className="h-px flex-1 bg-border" />
-        </div>
-        <button type="button" onClick={() => go("google.user@gmail.com")}
-          className="flex w-full items-center justify-center gap-3 rounded-full border-2 border-border bg-card py-3 font-bold text-brand-deep transition hover:bg-muted">
+        <button type="button" onClick={go}
+          className="mt-8 flex w-full items-center justify-center gap-3 rounded-full border-2 border-border bg-card py-3.5 text-lg font-bold text-brand-deep shadow-pop transition hover:bg-muted active:translate-y-1">
           <span className="font-display text-xl text-brand-blue">G</span> Login with Google
         </button>
       </div>
