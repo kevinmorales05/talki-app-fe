@@ -355,18 +355,20 @@ function PictoViewer({
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     const el = ref.current;
     el?.requestFullscreen?.()
       .then(() => (screen.orientation as unknown as { lock?: (o: string) => Promise<void> }).lock?.("landscape"))
       .catch(() => {});
-    const onFs = () => !document.fullscreenElement && onClose();
+    const onFs = () => !document.fullscreenElement && closeRef.current();
     document.addEventListener("fullscreenchange", onFs);
     return () => {
       document.removeEventListener("fullscreenchange", onFs);
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     };
-  }, [onClose]);
+  }, []);
   const btn = "absolute grid h-14 w-14 place-items-center rounded-full text-on-brand shadow-pop";
   return (
     <div ref={ref} className="fixed inset-0 z-50 bg-background">
