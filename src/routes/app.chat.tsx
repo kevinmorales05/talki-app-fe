@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
-import { Mic, MessageSquareText, ArrowLeft } from "lucide-react";
-import { speak, PICTOS, type Picto } from "@/lib/talki";
+import { Mic, MessageSquareText, ArrowLeft, X, Volume2, Bookmark, BookmarkCheck, Maximize2 } from "lucide-react";
+import { speak, PICTOS, useSavedPhrases, type Picto } from "@/lib/talki";
 import isoAsset from "@/assets/talki-isotype.png.asset.json";
 import {
   Conversation,
@@ -103,6 +103,13 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
     transport: new DefaultChatTransport({ api: "/api/chat" }),
   });
 
+  const saved = useSavedPhrases();
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [viewing, setViewing] = useState<{ id: string; pictos: Picto[] } | null>(null);
+  const savePictos = (id: string, pictos: Picto[]) => {
+    saved.add(pictos.map((p) => p.id));
+    setSavedIds((s) => (s.includes(id) ? s : [...s, id]));
+  };
   const [pictoMsgs, setPictoMsgs] = useState<{ id: string; text: string; pictos: Picto[] }[]>([]);
   // Mock: turn each spoken word into a pictogram card.
   const sendPictos = () => {
@@ -113,7 +120,7 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
       .replace(/[^\p{L}\s']/gu, "")
       .split(/\s+/)
       .filter(Boolean)
-      .map((w, i) => PICTOS[w] ?? { id: `${w}-${i}`, emoji: "💬", label: w });
+      .map((w) => PICTOS[w] ?? { id: w, emoji: "💬", label: w });
     setPictoMsgs((prev) => [...prev, { id: crypto.randomUUID(), text: said, pictos }]);
     setText("");
   };
@@ -167,6 +174,15 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
   };
 
   return (
+    <>
+    {viewing && (
+      <PictoViewer
+        pictos={viewing.pictos}
+        saved={savedIds.includes(viewing.id)}
+        onSave={() => savePictos(viewing.id, viewing.pictos)}
+        onClose={() => setViewing(null)}
+      />
+    )}
     <div className="mx-auto flex h-[calc(100dvh-8.5rem)] max-w-3xl flex-col px-4 md:h-screen md:py-6">
       <div className="flex items-center gap-3 py-4">
         <button
@@ -203,6 +219,21 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
                       <span className="mt-1 text-xs font-semibold text-brand-deep">{pc.label}</span>
                     </button>
                   ))}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setViewing({ id: pm.id, pictos: pm.pictos })}
+                    className="flex items-center gap-1.5 rounded-full bg-brand-blue px-4 py-2 text-sm font-semibold text-on-brand"
+                  >
+                    <Maximize2 className="h-4 w-4" /> See
+                  </button>
+                  <button
+                    onClick={() => savePictos(pm.id, pm.pictos)}
+                    className="flex items-center gap-1.5 rounded-full bg-brand-green px-4 py-2 text-sm font-semibold text-on-brand"
+                  >
+                    {savedIds.includes(pm.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+                    {savedIds.includes(pm.id) ? "Saved" : "Save"}
+                  </button>
                 </div>
               </div>
             ))}
@@ -307,6 +338,66 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
           </PromptInput>
         </div>
       )}
+    </div>
+    </>
+  );
+}
+
+function PictoViewer({
+  pictos,
+  saved,
+  onSave,
+  onClose,
+}: {
+  pictos: Picto[];
+  saved: boolean;
+  onSave: () => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    el?.requestFullscreen?.()
+      .then(() => (screen.orientation as unknown as { lock?: (o: string) => Promise<void> }).lock?.("landscape"))
+      .catch(() => {});
+    const onFs = () => !document.fullscreenElement && onClose();
+    document.addEventListener("fullscreenchange", onFs);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFs);
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    };
+  }, [onClose]);
+  const btn = "absolute grid h-14 w-14 place-items-center rounded-full text-on-brand shadow-pop";
+  return (
+    <div ref={ref} className="fixed inset-0 z-50 bg-background">
+      {/* Rotate to landscape on portrait screens when the browser can't lock orientation */}
+      <div className="absolute left-1/2 top-1/2 h-[100vh] w-[100vw] -translate-x-1/2 -translate-y-1/2 portrait:h-[100vw] portrait:w-[100vh] portrait:rotate-90">
+        <div className="flex h-full w-full items-center justify-center gap-4 overflow-x-auto px-20">
+          {pictos.map((pc, i) => (
+            <button
+              key={i}
+              onClick={() => speak(pc.label)}
+              className="flex shrink-0 flex-col items-center rounded-3xl border-4 border-brand-yellow bg-card p-4"
+            >
+              <span className="text-6xl sm:text-7xl">{pc.emoji}</span>
+              <span className="mt-2 font-display text-lg font-semibold text-brand-deep">{pc.label}</span>
+            </button>
+          ))}
+        </div>
+        <button onClick={onClose} aria-label="Exit" className={`${btn} right-4 top-4 bg-brand-deep`}>
+          <X className="h-7 w-7" />
+        </button>
+        <button
+          onClick={() => speak(pictos.map((p) => p.label).join(" "))}
+          aria-label="Listen"
+          className={`${btn} bottom-4 left-4 bg-brand-orange`}
+        >
+          <Volume2 className="h-7 w-7" />
+        </button>
+        <button onClick={onSave} aria-label={saved ? "Saved" : "Save"} className={`${btn} bottom-4 right-4 bg-brand-green`}>
+          {saved ? <BookmarkCheck className="h-7 w-7" /> : <Bookmark className="h-7 w-7" />}
+        </button>
+      </div>
     </div>
   );
 }
