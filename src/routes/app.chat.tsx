@@ -59,14 +59,14 @@ function ModeChooser({ onPick }: { onPick: (m: "voice" | "text") => void }) {
       id: "voice" as const,
       icon: Mic,
       label: "Speak",
-      hint: "Talk out loud and Talki listens and answers with voice.",
+      hint: "Click this icon to quickly generate pictograms with your voice.",
       tone: "bg-brand-coral",
     },
     {
       id: "text" as const,
       icon: MessageSquareText,
       label: "Write",
-      hint: "Type your question and read Talki's answers.",
+      hint: "Click here to enter your text manually.",
       tone: "bg-brand-blue",
     },
   ];
