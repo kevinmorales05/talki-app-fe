@@ -26,13 +26,13 @@ function TrainPage() {
   const [hearts, setHearts] = useState(5);
   const { add } = useSavedPhrases();
   const done = idx >= LESSONS.length;
-  const lesson = LESSONS[Math.min(idx, LESSONS.length - 1)];
+  const lesson = LESSONS[Math.min(idx, LESSONS.length - 1)]!;
   const progress = (idx / LESSONS.length) * 100;
 
   const pick = (i: number) => {
     if (result || picked.includes(i)) return;
     setPicked([...picked, i]);
-    speak(PICTOS[lesson.options[i]].label);
+    speak(PICTOS[lesson.options[i]!]!.label);
   };
   const check = () => {
     const built = picked.map((i) => lesson.options[i]);
@@ -84,7 +84,7 @@ function TrainPage() {
         {picked.map((i) => (
           <button key={i} onClick={() => !result && setPicked(picked.filter((x) => x !== i))}
             className="flex animate-pop items-center gap-2 rounded-2xl bg-brand-deep px-4 py-2 text-lg font-bold text-on-brand">
-            <span className="text-2xl">{PICTOS[lesson.options[i]].emoji}</span>{PICTOS[lesson.options[i]].label}
+            <span className="text-2xl">{PICTOS[lesson.options[i]!]!.emoji}</span>{PICTOS[lesson.options[i]!]!.label}
             {!result && <X className="h-4 w-4 opacity-70" />}
           </button>
         ))}
@@ -92,7 +92,7 @@ function TrainPage() {
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {lesson.options.map((id, i) => {
-          const p = PICTOS[id];
+          const p = PICTOS[id]!;
           const used = picked.includes(i);
           return (
             <button key={i} onClick={() => pick(i)} disabled={used}
