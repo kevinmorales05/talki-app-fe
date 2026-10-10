@@ -29,11 +29,21 @@ export const LESSONS: { target: string[]; options: string[] }[] = [
 ];
 
 export function speak(text: string) {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
+  if (typeof window === "undefined" || !("speechSynthesis" in window) || !text.trim()) return;
+  const synth = window.speechSynthesis;
   const u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-US";
   u.rate = 0.85;
-  window.speechSynthesis.speak(u);
+  const voice = synth.getVoices().find((v) => v.lang.startsWith("en"));
+  if (voice) u.voice = voice;
+  // Some browsers drop an utterance spoken right after cancel(), or stay paused.
+  synth.resume();
+  if (synth.speaking || synth.pending) {
+    synth.cancel();
+    setTimeout(() => synth.speak(u), 50);
+  } else {
+    synth.speak(u);
+  }
 }
 
 export const phraseText = (ids: string[]) => ids.map((id) => PICTOS[id]?.label ?? id).join(" ");
