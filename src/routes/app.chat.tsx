@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
-import { Mic, MessageSquareText, ArrowLeft, MicOff } from "lucide-react";
+import { Mic, MessageSquareText, ArrowLeft } from "lucide-react";
 import { speak } from "@/lib/talki";
 import logoAsset from "@/assets/talki-logo.png.asset.json";
 const logo = logoAsset.url;
@@ -148,7 +148,7 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
         .map((r) => r[0]?.transcript ?? "")
         .join(" ")
         .trim();
-      if (said) sendMessage({ text: said });
+      if (said) setText(said);
     };
     rec.onend = () => setListening(false);
     rec.onerror = () => setListening(false);
@@ -226,18 +226,56 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
       </Conversation>
 
       {mode === "voice" ? (
-        <div className="flex flex-col items-center py-4">
+        <div className="flex flex-col items-center gap-3 py-4">
           <button
             onClick={toggleMic}
-            disabled={busy}
-            aria-label={listening ? "Stop listening" : "Start speaking"}
-            className={`grid h-20 w-20 place-items-center rounded-full text-on-brand shadow-pop transition active:translate-y-1 disabled:opacity-50 ${listening ? "animate-pulse bg-brand-green" : "bg-brand-coral"}`}
+            disabled={busy || listening}
+            aria-label={listening ? "Listening" : "Start speaking"}
+            aria-busy={listening}
+            className="relative grid h-20 w-20 place-items-center rounded-full bg-brand-coral text-on-brand shadow-pop transition active:translate-y-1 disabled:cursor-not-allowed"
           >
-            {listening ? <MicOff className="h-9 w-9" /> : <Mic className="h-9 w-9" />}
+            {listening ? (
+              <>
+                <span className="absolute inset-0 animate-ping rounded-full bg-brand-coral/60" />
+                <span className="relative flex h-9 items-center gap-1">
+                  {[0, 150, 300, 450].map((d) => (
+                    <span
+                      key={d}
+                      className="h-full w-1.5 animate-pulse rounded-full bg-on-brand"
+                      style={{ animationDelay: `${d}ms`, height: d % 300 ? "60%" : "100%" }}
+                    />
+                  ))}
+                </span>
+              </>
+            ) : (
+              <Mic className="h-9 w-9" />
+            )}
           </button>
-          <p className="mt-2 text-sm font-semibold text-muted-foreground">
-            {listening ? "Listening… tap to stop" : busy ? "Talki is answering…" : "Tap and speak"}
+          <p className="text-sm font-semibold text-muted-foreground">
+            {listening ? "Listening…" : busy ? "Talki is answering…" : "Tap and speak"}
           </p>
+          <div className="w-full">
+            <label htmlFor="voice-text" className="mb-1 block text-sm font-semibold text-brand-deep">
+              Text (double check)
+            </label>
+            <div className="flex gap-2">
+              <textarea
+                id="voice-text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={2}
+                placeholder="Your words will appear here…"
+                className="flex-1 resize-none rounded-2xl border-2 border-brand-blue/30 bg-card px-3 py-2 text-brand-deep outline-none focus:border-brand-blue"
+              />
+              <button
+                onClick={() => submit({ text, files: [] })}
+                disabled={busy || listening || !text.trim()}
+                className="rounded-2xl bg-brand-blue px-4 font-semibold text-on-brand disabled:opacity-50"
+              >
+                Send
+              </button>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="py-3">
