@@ -177,23 +177,6 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
 
       <Conversation className="flex-1 rounded-3xl bg-sky">
         <ConversationContent>
-          {messages.length === 0 && (
-            <div className="flex flex-col items-center py-10 text-center">
-              <img src={logo} alt="Talki" width={1774} height={887} className="h-20 w-auto" />
-              <h2 className="mt-3 text-xl text-brand-deep">Hi! How can I help today?</h2>
-              <div className="mt-5 grid w-full gap-2 sm:grid-cols-2">
-                {STARTERS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => sendMessage({ text: s })}
-                    className="rounded-2xl border-2 border-brand-blue/30 bg-card px-4 py-3 text-left font-semibold text-brand-deep transition hover:border-brand-blue"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
           {messages.map((m) => (
             <Message key={m.id} from={m.role}>
               <MessageContent
