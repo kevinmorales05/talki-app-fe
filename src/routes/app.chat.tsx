@@ -14,8 +14,10 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { PictoViewer } from "@/components/PictoViewer";
-import { speak, useSavedPhrases, type Picto } from "@/lib/talki";
+import { speak, type Picto } from "@/lib/talki";
 import { useUser } from "@/contexts/UserContext";
+import { SavedPhrasesService } from "@/services/saved-phrases.service";
+import { toast } from "sonner";
 import { KidSwitcher } from "@/components/KidSwitcher";
 import {
   Conversation,
@@ -106,6 +108,8 @@ export interface WsMessage {
   responseType?: number;
   phrase?: any[];
   quotes?: any[];
+  topic?: string;
+  examples?: any[];
 }
 
 type SR = {
@@ -130,13 +134,26 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
   const [isThinking, setIsThinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const saved = useSavedPhrases();
+  const { user, activeKid } = useUser();
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [viewing, setViewing] = useState<{ id: string; pictos: Picto[] } | null>(null);
 
-  const savePictos = (id: string, pictos: Picto[]) => {
-    saved.add(pictos.map((p) => p.id));
-    setSavedIds((s) => (s.includes(id) ? s : [...s, id]));
+  const savePhraseToBackend = async (msg: WsMessage) => {
+    if (!user || !activeKid || !msg.phrase) return;
+    try {
+      await SavedPhrasesService.savePhrase({
+        user_id: user._id,
+        kid_id: activeKid._id,
+        phrase: msg.phrase,
+        topic: msg.topic,
+        examples: msg.examples,
+      });
+      setSavedIds((s) => (s.includes(msg.id) ? s : [...s, msg.id]));
+      toast.success("Phrase saved successfully!");
+    } catch (e) {
+      console.error("Failed to save phrase:", e);
+      toast.error("Failed to save phrase. Please try again.");
+    }
   };
 
   useEffect(() => {
@@ -152,6 +169,8 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
         responseType: response.type || (response.phrase ? 1 : null),
         phrase: response.phrase,
         quotes: response.quotes,
+        topic: response.topic,
+        examples: response.examples,
       };
 
       if (newMessage.responseType === 1 && response.phrase) {
@@ -241,7 +260,10 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
         <PictoViewer
           pictos={viewing.pictos}
           saved={savedIds.includes(viewing.id)}
-          onSave={() => savePictos(viewing.id, viewing.pictos)}
+          onSave={() => {
+            const m = chatHistory.find(msg => msg.id === viewing.id);
+            if (m) savePhraseToBackend(m);
+          }}
           onClose={() => setViewing(null)}
         />
       )}
@@ -302,7 +324,7 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
                                 {p.pictogram?.url ? (
                                   <img src={p.pictogram.url} alt={p.word} className="h-12 w-12 object-contain" />
                                 ) : (
-                                  <span className="text-4xl">💬</span>
+                                  <span className="text-4xl">{p.pictogram?.emoji || "💬"}</span>
                                 )}
                                 <span className="mt-1 text-xs font-semibold text-brand-deep capitalize text-center">
                                   {p.word}
@@ -316,7 +338,7 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
                               const pictos = m.phrase!.sort((a, b) => a.order - b.order).map((p: any) => ({
                                 id: p.word,
                                 label: p.word,
-                                emoji: "💬",
+                                emoji: p.pictogram?.emoji || "💬",
                                 url: p.pictogram?.url,
                               }));
                               setViewing({ id: m.id, pictos });
@@ -326,16 +348,9 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
                             <Maximize2 className="h-4 w-4" /> See
                           </button>
                           <button
-                            onClick={() => {
-                              const pictos = m.phrase!.sort((a, b) => a.order - b.order).map((p: any) => ({
-                                id: p.word,
-                                label: p.word,
-                                emoji: "💬",
-                                url: p.pictogram?.url,
-                              }));
-                              savePictos(m.id, pictos);
-                            }}
-                            className="flex items-center gap-1.5 rounded-full bg-brand-green px-4 py-2 text-sm font-semibold text-on-brand"
+                            onClick={() => savePhraseToBackend(m)}
+                            disabled={savedIds.includes(m.id)}
+                            className="flex items-center gap-1.5 rounded-full bg-brand-green px-4 py-2 text-sm font-semibold text-on-brand disabled:opacity-70 disabled:cursor-not-allowed"
                           >
                             {savedIds.includes(m.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
                             {savedIds.includes(m.id) ? "Saved" : "Save"}
