@@ -166,7 +166,7 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
         </div>
       </div>
 
-      {mode === "text" && (
+      {(
       <Conversation className="flex-1 rounded-3xl">
         <ConversationContent>
           {messages.map((m) => (
