@@ -19,7 +19,11 @@ export function PictoViewer({
   useEffect(() => {
     const el = ref.current;
     el?.requestFullscreen?.()
-      .then(() => (screen.orientation as unknown as { lock?: (o: string) => Promise<void> }).lock?.("landscape"))
+      .then(() =>
+        (screen.orientation as unknown as { lock?: (o: string) => Promise<void> }).lock?.(
+          "landscape",
+        ),
+      )
       .catch(() => {});
     const onFs = () => !document.fullscreenElement && closeRef.current();
     document.addEventListener("fullscreenchange", onFs);
@@ -41,11 +45,17 @@ export function PictoViewer({
               className="flex shrink-0 flex-col items-center rounded-3xl border-4 border-brand-yellow bg-card p-4"
             >
               <span className="text-6xl sm:text-7xl">{pc.emoji}</span>
-              <span className="mt-2 font-display text-lg font-semibold text-brand-deep">{pc.label}</span>
+              <span className="mt-2 font-display text-lg font-semibold text-brand-deep">
+                {pc.label}
+              </span>
             </button>
           ))}
         </div>
-        <button onClick={onClose} aria-label="Exit" className={`${btn} right-4 top-4 bg-brand-deep`}>
+        <button
+          onClick={onClose}
+          aria-label="Exit"
+          className={`${btn} right-4 top-4 bg-brand-deep`}
+        >
           <X className="h-7 w-7" />
         </button>
         <button
@@ -55,9 +65,15 @@ export function PictoViewer({
         >
           <Volume2 className="h-7 w-7" />
         </button>
-        {onSave && <button onClick={onSave} aria-label={saved ? "Saved" : "Save"} className={`${btn} bottom-4 right-4 bg-brand-green`}>
-          {saved ? <BookmarkCheck className="h-7 w-7" /> : <Bookmark className="h-7 w-7" />}
-        </button>}
+        {onSave && (
+          <button
+            onClick={onSave}
+            aria-label={saved ? "Saved" : "Save"}
+            className={`${btn} bottom-4 right-4 bg-brand-green`}
+          >
+            {saved ? <BookmarkCheck className="h-7 w-7" /> : <Bookmark className="h-7 w-7" />}
+          </button>
+        )}
       </div>
     </div>
   );
