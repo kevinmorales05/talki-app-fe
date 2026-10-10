@@ -3,6 +3,7 @@ import { MessageCircle, Star, Bookmark, User, LogOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import logoAsset from "@/assets/talki-logo.png.asset.json";
 const logo = logoAsset.url;
+import logoWhiteAsset from "@/assets/talki-logo-white.png.asset.json";
 import { getUser, logout } from "@/lib/talki";
 
 export const Route = createFileRoute("/app")({
@@ -39,8 +40,8 @@ function AppLayout() {
     <div className="min-h-screen bg-background">
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col bg-sidebar p-5 text-sidebar-foreground md:flex">
-        <Link to="/" className="mb-8 flex items-center justify-center rounded-2xl bg-card px-4 py-3">
-          <img src={logo} alt="Talki" width={1774} height={887} className="h-12 w-auto" />
+        <Link to="/" className="mb-8 flex items-center px-2 py-2">
+          <img src={logoWhiteAsset.url} alt="Talki" width={1028} height={565} className="h-14 w-auto" />
         </Link>
         <nav className="flex flex-1 flex-col gap-1.5">
           {[...NAV, { to: "/app/profile", label: "Profile", icon: User } as const].map((n) => (
