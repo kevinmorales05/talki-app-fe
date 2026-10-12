@@ -30,20 +30,29 @@ export const LESSONS: { target: string[]; options: string[] }[] = [
 
 export function speak(text: string) {
   if (typeof window === "undefined" || !("speechSynthesis" in window) || !text.trim()) return;
+  
+  console.log(`[TTS] Attempting to speak: "${text}"`);
   const synth = window.speechSynthesis;
+  
+  // DO NOT call synth.cancel() here! 
+  // In Chrome, calling cancel() immediately before speak() causes the NEW utterance to be canceled instantly, 
+  // which triggers the onerror event!
+  
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "en-US";
   u.rate = 0.85;
-  const voice = synth.getVoices().find((v) => v.lang.startsWith("en"));
-  if (voice) u.voice = voice;
-  // Some browsers drop an utterance spoken right after cancel(), or stay paused.
-  synth.resume();
-  if (synth.speaking || synth.pending) {
-    synth.cancel();
-    setTimeout(() => synth.speak(u), 50);
-  } else {
-    synth.speak(u);
+  
+  const voices = synth.getVoices();
+  const voice = voices.find((v) => v.lang.startsWith("en-US")) || voices.find((v) => v.lang.startsWith("en"));
+  if (voice) {
+    u.voice = voice;
   }
+  
+  u.onstart = () => console.log(`[TTS] Started speaking: "${text}"`);
+  u.onerror = (e) => console.error(`[TTS] Error on "${text}":`, e.error || e);
+  u.onend = () => console.log(`[TTS] Finished speaking: "${text}"`);
+
+  synth.speak(u);
 }
 
 export const toPicto = (id: string): Picto => PICTOS[id] ?? { id, emoji: "💬", label: id };

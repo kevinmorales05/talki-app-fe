@@ -84,14 +84,18 @@ function SavedPage() {
                 <div>
                   <div className="flex flex-wrap gap-2">
                     {pictos.map((pic, i) => (
-                      <div key={i} className="flex flex-col items-center justify-center rounded-2xl bg-sky px-3 py-2 border-2 border-brand-yellow min-w-16">
+                      <button 
+                        key={i} 
+                        onClick={() => speak(pic.label)}
+                        className="flex flex-col items-center justify-center rounded-2xl bg-sky px-3 py-2 border-2 border-brand-yellow min-w-16 transition hover:-translate-y-1 active:translate-y-0"
+                      >
                         {pic.url ? (
                           <img src={pic.url} alt={pic.label} className="h-10 w-10 object-contain" />
                         ) : (
                           <span className="text-3xl">{pic.emoji}</span>
                         )}
                         <span className="text-xs font-bold text-brand-deep mt-1 capitalize">{pic.label}</span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                   <p className="mt-3 text-lg font-bold capitalize text-brand-deep">

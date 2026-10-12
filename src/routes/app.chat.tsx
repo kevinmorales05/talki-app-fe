@@ -348,6 +348,12 @@ function ChatView({ mode, onBack }: { mode: "voice" | "text"; onBack: () => void
                             <Maximize2 className="h-4 w-4" /> See
                           </button>
                           <button
+                            onClick={() => speak([...m.phrase!].sort((a, b) => a.order - b.order).map((p: any) => p.word).join(" "))}
+                            className="flex items-center gap-1.5 rounded-full bg-brand-orange px-4 py-2 text-sm font-semibold text-on-brand"
+                          >
+                            <Volume2 className="h-4 w-4" /> Listen
+                          </button>
+                          <button
                             onClick={() => savePhraseToBackend(m)}
                             disabled={savedIds.includes(m.id)}
                             className="flex items-center gap-1.5 rounded-full bg-brand-green px-4 py-2 text-sm font-semibold text-on-brand disabled:opacity-70 disabled:cursor-not-allowed"

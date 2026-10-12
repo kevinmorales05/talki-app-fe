@@ -251,7 +251,10 @@ function TrainPage() {
       <div className="mt-6 flex min-h-28 flex-wrap items-center gap-3 rounded-3xl border-2 border-dashed border-brand-blue/40 bg-card p-4">
         {picked.length === 0 && <p className="text-muted-foreground">Tap the cards below in order…</p>}
         {picked.map((i) => (
-          <button key={i} onClick={() => !result && setPicked(picked.filter((x) => x !== i))}
+          <button key={i} onClick={() => {
+              speak(lesson.options[i]!.label);
+              if (!result) setPicked(picked.filter((x) => x !== i));
+            }}
             className="flex animate-pop items-center gap-2 rounded-2xl bg-brand-deep px-4 py-2 text-lg font-bold text-on-brand">
             {lesson.options[i]!.url ? (
                <img src={lesson.options[i]!.url!} alt={lesson.options[i]!.label} className="h-6 w-6 object-contain" />
