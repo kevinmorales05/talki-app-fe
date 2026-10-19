@@ -26,7 +26,7 @@ const NAV = [
 
 function AppLayout() {
   const navigate = useNavigate();
-  const { user, logoutUser } = useUser();
+  const { user, logoutUser, isSubscribed } = useUser();
   const [menu, setMenu] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -49,13 +49,23 @@ function AppLayout() {
           <img src={logoWhite} alt="Talki" width={1028} height={565} className="h-14 w-auto" />
         </Link>
         <nav className="flex flex-1 flex-col gap-1.5">
-          {[...NAV, { to: "/app/profile", label: "Profile", icon: User } as const].map((n) => (
-            <Link key={n.to} to={n.to}
-              className="flex items-center gap-3 rounded-2xl px-4 py-3 font-bold transition hover:bg-sidebar-accent"
-              activeProps={{ className: "bg-sidebar-primary text-sidebar-primary-foreground" }}>
-              <n.icon className="h-5 w-5" /> {n.label}
-            </Link>
-          ))}
+          {[...NAV, { to: "/app/profile", label: "Profile", icon: User } as const].map((n) => {
+            const isGated = !isSubscribed && (n.to === "/app/chat" || n.to === "/app/train");
+            return (
+              <Link key={n.to} to={n.to}
+                className="flex items-center justify-between rounded-2xl px-4 py-3 font-bold transition hover:bg-sidebar-accent"
+                activeProps={{ className: "bg-sidebar-primary text-sidebar-primary-foreground" }}>
+                <div className="flex items-center gap-3">
+                  <n.icon className="h-5 w-5" /> {n.label}
+                </div>
+                {isGated && (
+                  <span className="rounded-md bg-brand-orange/20 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-brand-orange">
+                    PRO
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
         <button onClick={doLogout} className="flex items-center gap-3 rounded-2xl px-4 py-3 font-bold transition hover:bg-sidebar-accent">
           <LogOut className="h-5 w-5" /> Log Out

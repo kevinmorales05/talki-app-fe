@@ -30,4 +30,13 @@ export const UsersService = {
     }
     return response.json();
   },
+
+  async findById(id: string) {
+    const response = await fetch(`${API_BASE}/users/${id}`);
+    if (!response.ok) {
+      if (response.status === 404) return null;
+      throw new Error(`Failed to fetch user: ${response.statusText}`);
+    }
+    return response.json();
+  },
 };

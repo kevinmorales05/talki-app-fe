@@ -7,6 +7,7 @@ import { KidSwitcher } from "@/components/KidSwitcher";
 import { GamesService, type Topic } from "@/services/games.service";
 import { SavedPhrasesService } from "@/services/saved-phrases.service";
 import { toast } from "sonner";
+import { PremiumLockScreen } from "@/components/subscription/PremiumLockScreen";
 
 export const Route = createFileRoute("/app/train")({
   head: () => ({
@@ -31,7 +32,18 @@ interface DynamicLesson {
 }
 
 function TrainPage() {
-  const { user, activeKid } = useUser();
+  const { user, activeKid, isSubscribed } = useUser();
+
+  if (!isSubscribed) {
+    return (
+      <PremiumLockScreen
+        title="Unlock Talki Train"
+        description="Talki Train offers interactive pictogram lessons and gamified exercises to help children develop speech skills. Subscribe to unlock."
+        feature="train"
+      />
+    );
+  }
+
   const [viewState, setViewState] = useState<ViewState>("SELECT_TOPIC");
   const [topics, setTopics] = useState<Topic[]>([]);
   const [currentTopic, setCurrentTopic] = useState<string>("random");

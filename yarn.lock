@@ -2353,6 +2353,18 @@
   dependencies:
     mermaid "^11.16.1"
 
+"@stripe/react-stripe-js@^7.0.0":
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/@stripe/react-stripe-js/-/react-stripe-js-7.0.0.tgz#21d7475215558b6555b1ec4c2360cad4089d58a6"
+  integrity sha512-wKw6YM0p/IpGj7hcwdJL7UAb7s0hlO8kLJIXn0CezewYILQ8j/A7j55EHuHHjF6dV+cr4yZhbhg4QLRjovfM4A==
+  dependencies:
+    prop-types "^15.7.2"
+
+"@stripe/stripe-js@^10.1.0":
+  version "10.1.0"
+  resolved "https://registry.yarnpkg.com/@stripe/stripe-js/-/stripe-js-10.1.0.tgz#9423e29bd86ba04c0c950c5b21890b7242f7c460"
+  integrity sha512-sLRPukMKMxvRVrgV3Za8LM0Yd2azrixQjfaiuzS8Fivlu/Gt7VbBuRiRZJIvfL3XxAw+FdfdmhHSvjAfLG3lkA==
+
 "@supabase/auth-js@2.117.3":
   version "2.117.3"
   resolved "https://registry.yarnpkg.com/@supabase/auth-js/-/auth-js-2.117.3.tgz#4e1dd8ad1aa8296176f80c973922b1428b0e26e1"
@@ -6388,7 +6400,7 @@ prettier@^3.7.3, prettier@^3.9.6:
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.9.10.tgz#ac378e432f1a7381518f2e080816bbaefa38d585"
   integrity sha512-skGHTH1Yb9QvaTC4hWnRTzEYtCpApF0UMBPz+t/0ZPzP8ihefo/btKd+QA7pUE0fEwA1SbS/NmhyEcstdXOIdA==
 
-prop-types@^15.6.2, prop-types@^15.8.1:
+prop-types@^15.6.2, prop-types@^15.7.2, prop-types@^15.8.1:
   version "15.8.1"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.8.1.tgz#67d87bf1a694f48435cf332c24af10214a3140b5"
   integrity sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==

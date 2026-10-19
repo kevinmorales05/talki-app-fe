@@ -19,6 +19,7 @@ import { useUser } from "@/contexts/UserContext";
 import { SavedPhrasesService } from "@/services/saved-phrases.service";
 import { toast } from "sonner";
 import { KidSwitcher } from "@/components/KidSwitcher";
+import { PremiumLockScreen } from "@/components/subscription/PremiumLockScreen";
 import {
   Conversation,
   ConversationContent,
@@ -48,7 +49,19 @@ export const Route = createFileRoute("/app/chat")({
 });
 
 function ChatPage() {
+  const { isSubscribed } = useUser();
   const [mode, setMode] = useState<null | "voice" | "text">(null);
+
+  if (!isSubscribed) {
+    return (
+      <PremiumLockScreen
+        title="Unlock Talki Chat"
+        description="Talki Chat uses AI to convert speech into interactive pictograms and answers your child development questions. Subscribe to unlock."
+        feature="chat"
+      />
+    );
+  }
+
   if (!mode) return <ModeChooser onPick={setMode} />;
   return <ChatView mode={mode} onBack={() => setMode(null)} />;
 }

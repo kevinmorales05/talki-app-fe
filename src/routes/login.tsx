@@ -8,7 +8,10 @@ import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { UsersService } from "@/services/users.service";
 import { KidsService } from "@/services/kids.service";
-import { useUser } from "@/contexts/UserContext";
+import { useUser, type KidData } from "@/contexts/UserContext";
+import { PlanSelectionSection } from "@/components/subscription/PlanSelectionSection";
+import { SubscriptionsService, type SubscriptionPlan } from "@/services/subscriptions.service";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -27,7 +30,9 @@ function LoginPage() {
   const { loginUser } = useUser();
   const [needsRegistration, setNeedsRegistration] = useState(false);
   const [needsKidRegistration, setNeedsKidRegistration] = useState(false);
+  const [needsSubscription, setNeedsSubscription] = useState(false);
   const [createdUser, setCreatedUser] = useState<any>(null);
+  const [registeredKids, setRegisteredKids] = useState<KidData[]>([]);
   const [firebaseToken, setFirebaseToken] = useState<string>("");
 
   const [formData, setFormData] = useState({ name: "", lastname: "", email: "", firebase_id: "" });
@@ -54,7 +59,7 @@ function LoginPage() {
           setNeedsKidRegistration(true);
         } else {
           loginUser(existingUser, kids, token);
-          navigate({ to: "/app/chat" });
+          navigate({ to: existingUser.state ? "/app/chat" : "/app/saved" });
         }
       } else {
         const displayName = user.displayName || "";
@@ -105,11 +110,54 @@ function LoginPage() {
       });
       setIsLoading(false);
       
-      loginUser(createdUser, [kidResponse], firebaseToken);
-      navigate({ to: "/app/chat" });
+      setRegisteredKids([kidResponse]);
+      setNeedsKidRegistration(false);
+      setNeedsSubscription(true);
     } catch (error) {
       console.error("Kid registration request failed", error);
       setIsLoading(false);
+    }
+  };
+
+  const handleSelectFree = async (plan: SubscriptionPlan) => {
+    setIsLoading(true);
+    try {
+      const updated = await SubscriptionsService.subscribeUser(createdUser._id, plan._id);
+      loginUser(updated || createdUser, registeredKids, firebaseToken);
+      toast.info("You're on the Free plan. Talki Chat & Train can be unlocked anytime!");
+      navigate({ to: "/app/saved" });
+    } catch (err) {
+      console.error("Error setting free subscription", err);
+      loginUser(createdUser, registeredKids, firebaseToken);
+      navigate({ to: "/app/saved" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSuccessPremium = (updatedUser: any) => {
+    loginUser(updatedUser, registeredKids, firebaseToken);
+    toast.success("Welcome to Talki Premium! All features are unlocked.");
+    navigate({ to: "/app/chat" });
+  };
+
+  const handleSkipSubscription = async () => {
+    setIsLoading(true);
+    try {
+      // Find free subscription plan
+      const plans = await SubscriptionsService.getSubscriptions();
+      const freePlan = plans.find((p) => p.price === 0);
+      if (freePlan) {
+        const updated = await SubscriptionsService.subscribeUser(createdUser._id, freePlan._id);
+        loginUser(updated || createdUser, registeredKids, firebaseToken);
+      } else {
+        loginUser(createdUser, registeredKids, firebaseToken);
+      }
+    } catch (err) {
+      loginUser(createdUser, registeredKids, firebaseToken);
+    } finally {
+      setIsLoading(false);
+      navigate({ to: "/app/saved" });
     }
   };
 
@@ -120,13 +168,18 @@ function LoginPage() {
         <img src={bgMobile} alt="A mother teaching her child with Talki" className="h-full w-full object-cover" />
       </picture>
       <div className="absolute inset-0 -z-10 bg-brand-deep/25" />
-      <div className="w-full max-w-md rounded-[2rem] bg-card/95 p-8 shadow-soft backdrop-blur">
+      <div
+        className={`w-full rounded-[2rem] bg-card/95 p-8 shadow-soft backdrop-blur transition-all duration-300 ${
+          needsSubscription ? "max-w-2xl" : "max-w-md"
+        }`}
+      >
         <Link to="/" className="flex flex-col items-center">
           <img src={logo} alt="Talki" width={1774} height={887} className="h-20 w-auto" />
           <h1 className="mt-2 text-3xl text-brand-deep">Welcome to Talki</h1>
         </Link>
 
-        {!needsRegistration && !needsKidRegistration && (
+        {/* 1. Google Login Screen */}
+        {!needsRegistration && !needsKidRegistration && !needsSubscription && (
           <>
             <p className="mt-1 text-center text-muted-foreground">Log in to continue</p>
             <button
@@ -140,11 +193,12 @@ function LoginPage() {
             </button>
           </>
         )}
-        
-        {needsRegistration && !needsKidRegistration && (
+
+        {/* 2. Parent Info Registration Form */}
+        {needsRegistration && !needsKidRegistration && !needsSubscription && (
           <form onSubmit={handleRegister} className="mt-6 flex flex-col gap-4">
             <p className="text-center text-sm font-medium text-brand-deep">
-              Almost there! Let's complete your profile.
+              Please complete your details to finish setting up your account.
             </p>
             <div>
               <label htmlFor="name" className="mb-1 block text-sm font-medium text-muted-foreground">First Name</label>
@@ -168,17 +222,28 @@ function LoginPage() {
                 className="w-full rounded-xl border border-border bg-background px-4 py-2.5 outline-none transition focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
               />
             </div>
+            <div>
+              <label htmlFor="email" className="mb-1 block text-sm font-medium text-muted-foreground">Email</label>
+              <input
+                id="email"
+                type="email"
+                disabled
+                value={formData.email}
+                className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-muted-foreground outline-none cursor-not-allowed"
+              />
+            </div>
             <button
               type="submit"
               disabled={isLoading}
               className="mt-4 w-full rounded-full bg-brand-deep py-3 font-bold text-white shadow-pop transition hover:bg-brand-deep/90 active:translate-y-1 disabled:opacity-50"
             >
-              {isLoading ? "Creating Account..." : "Next Step"}
+              {isLoading ? "Saving..." : "Next: Add Kid Profile"}
             </button>
           </form>
         )}
 
-        {needsKidRegistration && (
+        {/* 3. Kid Profile Registration Form */}
+        {needsKidRegistration && !needsSubscription && (
           <form onSubmit={handleKidRegister} className="mt-6 flex flex-col gap-4">
             <p className="text-center text-sm font-medium text-brand-deep">
               Let's add a kid profile!
@@ -236,9 +301,20 @@ function LoginPage() {
               disabled={isLoading}
               className="mt-4 w-full rounded-full bg-brand-deep py-3 font-bold text-white shadow-pop transition hover:bg-brand-deep/90 active:translate-y-1 disabled:opacity-50"
             >
-              {isLoading ? "Saving..." : "Add Kid & Finish"}
+              {isLoading ? "Saving..." : "Next: Choose Plan"}
             </button>
           </form>
+        )}
+
+        {/* 4. NEW STEP: Subscription Selection Step */}
+        {needsSubscription && createdUser && (
+          <PlanSelectionSection
+            userId={createdUser._id}
+            onSelectFree={handleSelectFree}
+            onSuccessPremium={handleSuccessPremium}
+            onSkip={handleSkipSubscription}
+            isSubmitting={isLoading}
+          />
         )}
       </div>
     </div>

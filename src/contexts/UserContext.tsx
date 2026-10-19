@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { UsersService } from "@/services/users.service";
 
 export interface UserData {
   _id: string;
@@ -6,6 +7,9 @@ export interface UserData {
   lastname: string;
   email: string;
   firebase_id: string;
+  subscription_id?: string | null;
+  tokensAvailable?: number;
+  state?: boolean;
 }
 
 export interface KidData {
@@ -23,7 +27,10 @@ interface UserContextType {
   activeKid: KidData | null;
   token: string | null;
   isAuthenticated: boolean;
+  isSubscribed: boolean;
   loginUser: (user: UserData, kids: KidData[], token: string) => void;
+  updateUser: (partialUser: Partial<UserData>) => void;
+  refreshUser: () => Promise<UserData | null>;
   updateKids: (kids: KidData[]) => void;
   setActiveKid: (kid: KidData) => void;
   logoutUser: () => void;
@@ -70,10 +77,40 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
+  const updateUser = useCallback((partialUser: Partial<UserData>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...partialUser };
+      try {
+        const stored = sessionStorage.getItem(SESSION_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          sessionStorage.setItem(SESSION_KEY, JSON.stringify({ ...parsed, user: updated }));
+        }
+      } catch (err) {
+        console.error("Failed to update user in session", err);
+      }
+      return updated;
+    });
+  }, []);
+
+  const refreshUser = useCallback(async (): Promise<UserData | null> => {
+    if (!user?._id) return null;
+    try {
+      const latestUser = await UsersService.findById(user._id);
+      if (latestUser) {
+        updateUser(latestUser);
+        return latestUser;
+      }
+    } catch (err) {
+      console.error("Failed to refresh user:", err);
+    }
+    return null;
+  }, [user?._id, updateUser]);
+
   const updateKids = (newKids: KidData[]) => {
     setKids(newKids);
     
-    // Ensure activeKid is valid and exists in newKids, otherwise fallback to the first kid
     const updatedActiveKid = activeKid && newKids.find(k => k._id === activeKid._id) 
       ? newKids.find(k => k._id === activeKid._id)! 
       : newKids.length > 0 ? newKids[0] : null;
@@ -110,8 +147,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     sessionStorage.removeItem(SESSION_KEY);
   };
 
+  const isSubscribed = Boolean(user?.state);
+
   return (
-    <UserContext.Provider value={{ user, kids, activeKid, token, isAuthenticated: !!user, loginUser, updateKids, setActiveKid, logoutUser }}>
+    <UserContext.Provider value={{
+      user,
+      kids,
+      activeKid,
+      token,
+      isAuthenticated: !!user,
+      isSubscribed,
+      loginUser,
+      updateUser,
+      refreshUser,
+      updateKids,
+      setActiveKid,
+      logoutUser,
+    }}>
       {children}
     </UserContext.Provider>
   );
